@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>thBILL Risk Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/custom.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'theo-blue': '#1e40af',
+                        'theo-dark': '#0f172a',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-theo-dark border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-white">thBILL Risk Report</h1>
+                    <p class="text-gray-400 text-sm mt-1">Independent risk assessment of Theo's Short Duration US Treasury Fund</p>
+                </div>
+                <div class="text-right text-sm text-gray-500">
+                    <div>Last updated: <span id="last-updated">-</span></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-8">
+        <!-- Executive Summary -->
+        <section class="mb-8">
+            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                <h2 class="text-xl font-semibold mb-4 text-white">Executive Summary</h2>
+                <p class="text-gray-300 leading-relaxed">
+                    thBILL is a tokenized basket of US Treasury bills issued by Theo Network. It aims to provide
+                    on-chain exposure to short-duration T-bills through Libeara's ULTRA token. While the underlying
+                    collateral (US Treasuries) is high quality, the product has centralization risks typical of
+                    RWA tokens, including reliance on the issuer for minting/redemption and limited on-chain
+                    transparency for a portion of reserves.
+                </p>
+            </div>
+        </section>
+
+        <!-- Overall Risk Rating -->
+        <section class="mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-white">Overall Risk Assessment</h2>
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 text-center">
+                    <div class="text-2xl mb-2" title="5/5 stars">★★★★★</div>
+                    <div class="text-sm font-medium text-white">Collateral Quality</div>
+                    <div class="text-xs text-gray-400 mt-1">US T-Bills</div>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 text-center">
+                    <div class="text-2xl mb-2" title="4/5 stars">★★★★☆</div>
+                    <div class="text-sm font-medium text-white">Liquidity & Peg</div>
+                    <div class="text-xs text-gray-400 mt-1">Good DEX depth</div>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 text-center">
+                    <div class="text-2xl mb-2" title="2/5 stars">★★☆☆☆</div>
+                    <div class="text-sm font-medium text-white">Issuer / Governance</div>
+                    <div class="text-xs text-gray-400 mt-1">Centralized</div>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 text-center">
+                    <div class="text-2xl mb-2" title="3/5 stars">★★★☆☆</div>
+                    <div class="text-sm font-medium text-white">Operational</div>
+                    <div class="text-xs text-gray-400 mt-1">Standard RWA</div>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 text-center">
+                    <div class="text-2xl mb-2" title="3/5 stars">★★★☆☆</div>
+                    <div class="text-sm font-medium text-white">Transparency</div>
+                    <div class="text-xs text-gray-400 mt-1">77% on-chain</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Live Metrics -->
+        <section class="mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-white">Live Metrics</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- TVL Card -->
+                <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
+                    <div class="text-sm text-gray-400 mb-1">Total Value Locked</div>
+                    <div class="text-2xl font-bold text-white" id="tvl-total">-</div>
+                    <div class="text-xs text-gray-500 mt-2" id="tvl-breakdown"></div>
+                </div>
+                <!-- Backing Ratio -->
+                <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
+                    <div class="text-sm text-gray-400 mb-1">On-Chain Backing Ratio</div>
+                    <div class="text-2xl font-bold" id="backing-ratio">-</div>
+                    <div class="text-xs text-gray-500 mt-2">ULTRA supply / thBILL supply</div>
+                </div>
+                <!-- 24h Flow -->
+                <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
+                    <div class="text-sm text-gray-400 mb-1">24h Net Flow</div>
+                    <div class="text-2xl font-bold" id="net-flow">-</div>
+                    <div class="text-xs text-gray-500 mt-2" id="flow-note"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Collateral & Backing -->
+        <section class="mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-white">Collateral & Backing</h2>
+            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                <div class="p-5">
+                    <p class="text-gray-300 text-sm mb-4">
+                        thBILL is backed by ULTRA tokens (Libeara's tokenized T-bills). The Treasury holds ULTRA
+                        across multiple chains. Approximately 22% of backing is held as off-chain "Cash" which
+                        cannot be independently verified on-chain.
+                    </p>
+                </div>
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-900">
+                        <tr>
+                            <th class="text-left px-5 py-3 text-gray-400 font-medium">Asset</th>
+                            <th class="text-right px-5 py-3 text-gray-400 font-medium">Amount</th>
+                            <th class="text-right px-5 py-3 text-gray-400 font-medium">% of Supply</th>
+                        </tr>
+                    </thead>
+                    <tbody id="backing-table">
+                        <tr><td colspan="3" class="px-5 py-3 text-gray-500">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Treasury Holdings -->
+        <section class="mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-white">Treasury Holdings</h2>
+            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                <div class="p-5">
+                    <p class="text-gray-300 text-sm mb-4">
+                        The Theo Treasury (<code class="text-xs bg-gray-700 px-1 py-0.5 rounded">0xAECCa546baFB16735b273702632C8Cbb83509d8F</code>)
+                        holds ULTRA tokens that back thBILL. Not all ULTRA supply is held by Treasury - some is held by other users.
+                    </p>
+                </div>
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-900">
+                        <tr>
+                            <th class="text-left px-5 py-3 text-gray-400 font-medium">Chain</th>
+                            <th class="text-right px-5 py-3 text-gray-400 font-medium">Treasury ULTRA</th>
+                            <th class="text-right px-5 py-3 text-gray-400 font-medium">ULTRA Supply</th>
+                            <th class="text-right px-5 py-3 text-gray-400 font-medium">Coverage</th>
+                        </tr>
+                    </thead>
+                    <tbody id="treasury-table">
+                        <tr><td colspan="4" class="px-5 py-3 text-gray-500">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Secondary Liquidity -->
+        <section class="mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-white">Secondary Market Liquidity</h2>
+            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                <div class="p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-sm text-gray-400">24h DEX Volume</div>
+                            <div class="text-xl font-bold text-white" id="dex-volume">-</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm text-gray-400">Active Pools</div>
+                            <div class="text-xl font-bold text-white" id="pool-count">-</div>
+                        </div>
+                    </div>
+                </div>
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-900">
+                        <tr>
+                            <th class="text-left px-5 py-3 text-gray-400 font-medium">Market</th>
+                            <th class="text-right px-5 py-3 text-gray-400 font-medium">24h Volume</th>
+                            <th class="text-right px-5 py-3 text-gray-400 font-medium">Spread</th>
+                        </tr>
+                    </thead>
+                    <tbody id="liquidity-table">
+                        <tr><td colspan="3" class="px-5 py-3 text-gray-500">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- DeFi Integrations -->
+        <section class="mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-white">DeFi Integrations</h2>
+            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-900">
+                        <tr>
+                            <th class="text-left px-5 py-3 text-gray-400 font-medium">Protocol</th>
+                            <th class="text-left px-5 py-3 text-gray-400 font-medium">Chain</th>
+                            <th class="text-left px-5 py-3 text-gray-400 font-medium">Pool</th>
+                            <th class="text-right px-5 py-3 text-gray-400 font-medium">TVL</th>
+                            <th class="text-right px-5 py-3 text-gray-400 font-medium">APY</th>
+                        </tr>
+                    </thead>
+                    <tbody id="defi-table">
+                        <tr><td colspan="5" class="px-5 py-3 text-gray-500">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Risk Sections -->
+        <section class="mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-white">Risk Analysis</h2>
+            <div class="space-y-4">
+                <!-- Issuer Risk -->
+                <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
+                    <h3 class="font-semibold text-white mb-2">Issuer Risk</h3>
+                    <p class="text-gray-300 text-sm">
+                        Theo Network is the issuer of thBILL. The protocol is relatively new and operates with
+                        centralized control over minting and redemption. Users must trust Theo to maintain
+                        proper backing and honor redemptions. There is no on-chain governance mechanism.
+                    </p>
+                </div>
+
+                <!-- Decentralization -->
+                <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
+                    <h3 class="font-semibold text-white mb-2">Decentralization</h3>
+                    <p class="text-gray-300 text-sm">
+                        thBILL is highly centralized. Key functions (minting, redemption, treasury management)
+                        are controlled by Theo. The underlying ULTRA tokens are issued by Libeara, adding
+                        another centralized dependency. Smart contracts are upgradeable.
+                    </p>
+                </div>
+
+                <!-- Technical Risk -->
+                <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
+                    <h3 class="font-semibold text-white mb-2">Technical Risk</h3>
+                    <p class="text-gray-300 text-sm">
+                        The thBILL vault follows the ERC-4626 standard. Contracts are deployed on Ethereum
+                        and Arbitrum. The protocol uses standard patterns but contracts are upgradeable,
+                        which introduces admin key risks. Multi-chain deployment adds bridge risk.
+                    </p>
+                </div>
+
+                <!-- Minting & Redemption -->
+                <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
+                    <h3 class="font-semibold text-white mb-2">Minting & Redemption</h3>
+                    <p class="text-gray-300 text-sm">
+                        Minting and redemption are processed through Theo's system, not permissionlessly on-chain.
+                        There may be delays during high-volume periods. Minimum redemption amounts may apply.
+                        The process involves KYC for large amounts.
+                    </p>
+                </div>
+
+                <!-- Operational Risk -->
+                <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
+                    <h3 class="font-semibold text-white mb-2">Operational Risk</h3>
+                    <p class="text-gray-300 text-sm">
+                        Standard RWA operational risks apply: custodian failure, regulatory action, banking
+                        issues, oracle failures. The ~22% "Cash" reserves held off-chain are not independently
+                        verifiable. Users rely on Theo's attestations for this portion.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Disclaimer -->
+        <section class="mb-8">
+            <div class="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-5">
+                <h3 class="font-semibold text-yellow-500 mb-2">Disclaimer</h3>
+                <p class="text-yellow-200/80 text-sm">
+                    This report is for informational purposes only and does not constitute financial advice.
+                    The data presented is collected from on-chain sources and third-party APIs and may not
+                    be complete or accurate. Always do your own research before investing.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-800 py-6">
+        <div class="max-w-6xl mx-auto px-4 text-center text-sm text-gray-500">
+            <p>Data sourced from on-chain queries, DefiLlama, and CoinGecko</p>
+            <p class="mt-1">
+                <a href="https://github.com/your-repo/thbill-risk-info" class="text-gray-400 hover:text-white">GitHub</a>
+                <span class="mx-2">|</span>
+                <a href="https://theo.xyz" class="text-gray-400 hover:text-white" target="_blank">Theo Network</a>
+            </p>
+        </div>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

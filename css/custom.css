@@ -1,0 +1,46 @@
+/* thBILL Risk Dashboard - Custom Styles */
+
+/* Star ratings */
+.text-2xl {
+    color: #fbbf24; /* amber-400 */
+}
+
+/* Table hover effects */
+tbody tr:hover {
+    background-color: rgba(55, 65, 81, 0.5);
+}
+
+/* Code styling */
+code {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+/* Smooth transitions */
+.bg-gray-800 {
+    transition: background-color 0.2s ease;
+}
+
+/* Loading animation */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.loading {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .grid-cols-5 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    table {
+        font-size: 0.75rem;
+    }
+
+    th, td {
+        padding: 0.5rem !important;
+    }
+}
