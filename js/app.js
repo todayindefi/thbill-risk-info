@@ -27,7 +27,9 @@ function formatPercent(num, decimals = 2) {
 
 function formatDate(isoString) {
     if (!isoString) return '-';
-    const date = new Date(isoString);
+    // Append 'Z' if no timezone indicator - timestamps from the API are UTC
+    const utcString = isoString.endsWith('Z') ? isoString : isoString + 'Z';
+    const date = new Date(utcString);
     return date.toLocaleString('en-US', {
         month: 'short',
         day: 'numeric',
