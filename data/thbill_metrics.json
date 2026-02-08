@@ -2,13 +2,13 @@
   "asset": "thBILL",
   "vault_address": "0x5fa487bca6158c64046b2813623e20755091da0b",
   "treasury_address": "0xAECCa546baFB16735b273702632C8Cbb83509d8F",
-  "timestamp": "2026-02-08T05:20:01.850634",
+  "timestamp": "2026-02-08T06:20:02.286706",
   "tvl_usd": {
-    "total": 129196474.11408001,
+    "total": 129196473.59239,
     "by_chain": {
-      "Arbitrum": 36486155.51374,
-      "Ethereum": 66805518.60034,
-      "Solana": 25904800
+      "Ethereum": 66805518.07865,
+      "Solana": 25904800,
+      "Arbitrum": 36486155.51374
     }
   },
   "backing": {
@@ -30,26 +30,26 @@
     "net_flow_percentage": null,
     "supply_24h_ago": null,
     "current_supply": 163010214.276832,
-    "note": "Only 21h of data available (need 24h)"
+    "note": "Only 22h of data available (need 24h)"
   },
   "secondary_liquidity": {
-    "total_volume_24h": 1042993.52,
+    "total_volume_24h": 1036033.58,
     "pools": [
       {
         "market": "Uniswap V3 (Arbitrum One)",
         "pair": "0XFDD22CE6D1F66BC0EC89B20BF16CCB6670F55A5A/0XAF88D065E77C8CC2239327C5EDB3A432268E5831",
-        "volume_24h": 1039178,
+        "volume_24h": 1032131,
         "spread": 0.602859,
-        "last_price": 1.015224633,
+        "last_price": 1.0152320755,
         "trust_score": "green"
       },
       {
         "market": "Uniswap V3 (Ethereum)",
         "pair": "0X5FA487BCA6158C64046B2813623E20755091DA0B/0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48",
-        "volume_24h": 3729.26,
-        "spread": 0.617961,
-        "last_price": 1.0148393753,
-        "trust_score": "yellow"
+        "volume_24h": 3816.32,
+        "spread": 0.618006,
+        "last_price": 1.0146325248,
+        "trust_score": "green"
       },
       {
         "market": "Uniswap V4 (Base)",
@@ -66,25 +66,25 @@
       "protocol": "pendle",
       "chain": "Arbitrum",
       "pool": "THBILL",
-      "tvl_usd": 13938225,
-      "apy": 3.88928,
-      "apy_base": 3.50132,
-      "apy_reward": 0.38795
+      "tvl_usd": 13938258,
+      "apy": 3.89065,
+      "apy_base": 3.5013,
+      "apy_reward": 0.38935
     },
     {
       "protocol": "pendle",
       "chain": "Arbitrum",
       "pool": "THBILL",
-      "tvl_usd": 13938225,
-      "apy": 9.72145,
-      "apy_base": 9.72145,
+      "tvl_usd": 13938258,
+      "apy": 9.72141,
+      "apy_base": 9.72141,
       "apy_reward": null
     },
     {
       "protocol": "morpho-v1",
       "chain": "Arbitrum",
       "pool": "THBILL",
-      "tvl_usd": 10559273,
+      "tvl_usd": 10561389,
       "apy": 0,
       "apy_base": null,
       "apy_reward": null
@@ -93,7 +93,7 @@
       "protocol": "morpho-v1",
       "chain": "Arbitrum",
       "pool": "PT-THBILL-19FEB2026",
-      "tvl_usd": 5577323,
+      "tvl_usd": 5580660,
       "apy": 0,
       "apy_base": null,
       "apy_reward": null
@@ -102,7 +102,7 @@
       "protocol": "uniswap-v3",
       "chain": "Arbitrum",
       "pool": "USDC-THBILL",
-      "tvl_usd": 2668658,
+      "tvl_usd": 2667477,
       "apy": 0,
       "apy_base": 0,
       "apy_reward": null
@@ -111,7 +111,7 @@
       "protocol": "euler-v2",
       "chain": "Arbitrum",
       "pool": "THBILL",
-      "tvl_usd": 1861380,
+      "tvl_usd": 1859677,
       "apy": 3.52914,
       "apy_base": 3.52914,
       "apy_reward": null
@@ -120,16 +120,16 @@
       "protocol": "project-x",
       "chain": "Hyperevm",
       "pool": "USD\u20ae0-THBILL",
-      "tvl_usd": 1455388,
-      "apy": 0.00212,
-      "apy_base": 0.00212,
+      "tvl_usd": 1455546,
+      "apy": 0.00252,
+      "apy_base": 0.00252,
       "apy_reward": null
     },
     {
       "protocol": "morpho-v1",
       "chain": "Hyperliquid",
       "pool": "THBILL",
-      "tvl_usd": 1255796,
+      "tvl_usd": 1257728,
       "apy": 0,
       "apy_base": null,
       "apy_reward": null
@@ -156,9 +156,9 @@
       "protocol": "project-x",
       "chain": "Hyperevm",
       "pool": "KHYPE-THBILL",
-      "tvl_usd": 28312,
-      "apy": 1.76311,
-      "apy_base": 1.76311,
+      "tvl_usd": 28487,
+      "apy": 2.02125,
+      "apy_base": 2.02125,
       "apy_reward": null
     },
     {
