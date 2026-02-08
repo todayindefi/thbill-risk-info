@@ -211,6 +211,17 @@ function updateTreasuryTable(backing) {
     }).join('');
 }
 
+function formatDepth(buy, sell) {
+    // Format 2% depth as buy/sell or average
+    if (buy === null && sell === null) return '-';
+    if (buy !== null && sell !== null) {
+        // Show average for compact display
+        const avg = (buy + sell) / 2;
+        return formatCurrency(avg, 0);
+    }
+    return formatCurrency(buy || sell, 0);
+}
+
 function updateLiquidityTable(liquidity) {
     if (!liquidity) return;
 
@@ -222,21 +233,31 @@ function updateLiquidityTable(liquidity) {
     const tbody = document.getElementById('liquidity-table');
 
     if (pools.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-3 text-gray-500">No pools found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-3 text-gray-500">No pools found</td></tr>';
         return;
     }
 
-    tbody.innerHTML = pools.map(pool => `
-        <tr class="border-t border-gray-700/50">
-            <td class="px-5 py-3">
-                <div class="font-medium">${pool.market}</div>
-                <div class="text-xs text-gray-500">${pool.pair}</div>
-            </td>
-            <td class="text-right px-5 py-3">${formatCurrency(pool.tvl_usd)}</td>
-            <td class="text-right px-5 py-3">${formatCurrency(pool.volume_24h)}</td>
-            <td class="text-right px-5 py-3">${pool.spread ? formatPercent(pool.spread) : '-'}</td>
-        </tr>
-    `).join('');
+    tbody.innerHTML = pools.map(pool => {
+        const depthBuy = pool.depth_2pct_buy;
+        const depthSell = pool.depth_2pct_sell;
+        const depthDisplay = formatDepth(depthBuy, depthSell);
+        const depthTitle = (depthBuy !== null && depthSell !== null)
+            ? `Buy: ${formatCurrency(depthBuy, 0)} / Sell: ${formatCurrency(depthSell, 0)}`
+            : '';
+
+        return `
+            <tr class="border-t border-gray-700/50">
+                <td class="px-5 py-3">
+                    <div class="font-medium">${pool.market}</div>
+                    <div class="text-xs text-gray-500">${pool.pair}</div>
+                </td>
+                <td class="text-right px-5 py-3">${formatCurrency(pool.tvl_usd)}</td>
+                <td class="text-right px-5 py-3" title="${depthTitle}">${depthDisplay}</td>
+                <td class="text-right px-5 py-3">${formatCurrency(pool.volume_24h)}</td>
+                <td class="text-right px-5 py-3">${pool.spread ? formatPercent(pool.spread) : '-'}</td>
+            </tr>
+        `;
+    }).join('');
 }
 
 function updateTheoReported(theo, backing) {
