@@ -181,10 +181,9 @@ function updateTreasuryTable(backing) {
         },
         {
             chain: 'Solana',
-            treasury: null,
+            treasury: backing.treasury_ultra_solana,
             supply: backing.ultra_solana,
-            coverage: null,
-            note: 'Different treasury address'
+            coverage: backing.ultra_solana ? (backing.treasury_ultra_solana / backing.ultra_solana) * 100 : 0
         },
         {
             chain: 'Total',
