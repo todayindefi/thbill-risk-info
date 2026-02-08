@@ -347,18 +347,20 @@ function updatePegStatus(peg) {
         }
     }
 
-    // Per-pool price table
+    // Per-chain price table
     const tbody = document.getElementById('peg-pool-table');
-    const poolPrices = peg.per_pool_prices || {};
-    const entries = Object.entries(poolPrices);
+    const chainPrices = peg.per_chain_prices || {};
+    const entries = Object.entries(chainPrices);
 
     if (entries.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="px-5 py-3 text-gray-500">No pool prices available</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-3 text-gray-500">No chain prices available</td></tr>';
         return;
     }
 
     const nav = peg.nav_per_share;
-    tbody.innerHTML = entries.map(([pool, price]) => {
+    tbody.innerHTML = entries.map(([chain, data]) => {
+        const price = data.vwap;
+        const volume = data.volume_24h;
         let deviationText = '-';
         let deviationClass = '';
         if (nav && price) {
@@ -374,10 +376,12 @@ function updatePegStatus(peg) {
                 deviationClass = 'text-red-400';
             }
         }
+        const volStr = volume >= 1000 ? '$' + (volume / 1000).toFixed(1) + 'K' : '$' + volume.toFixed(0);
         return `
             <tr class="border-t border-gray-700/50">
-                <td class="px-5 py-3">${pool}</td>
+                <td class="px-5 py-3">${chain}</td>
                 <td class="text-right px-5 py-3">$${price.toFixed(4)}</td>
+                <td class="text-right px-5 py-3 text-gray-400">${volStr}</td>
                 <td class="text-right px-5 py-3 ${deviationClass}">${deviationText}</td>
             </tr>
         `;
