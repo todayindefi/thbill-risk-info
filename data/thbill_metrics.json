@@ -2,7 +2,7 @@
   "asset": "thBILL",
   "vault_address": "0x5fa487bca6158c64046b2813623e20755091da0b",
   "treasury_address": "0xAECCa546baFB16735b273702632C8Cbb83509d8F",
-  "timestamp": "2026-02-08T08:57:09.349968",
+  "timestamp": "2026-02-08T09:05:28.068402",
   "tvl_usd": {
     "total": 129196474.01319,
     "by_chain": {
@@ -41,12 +41,14 @@
     "note": null
   },
   "secondary_liquidity": {
-    "total_volume_24h": 1024577.21,
+    "total_volume_24h": 1024549.42,
+    "total_tvl_usd": 2782181.317777,
     "pools": [
       {
         "market": "Uniswap V3 (Arbitrum One)",
         "pair": "0XFDD22CE6D1F66BC0EC89B20BF16CCB6670F55A5A/0XAF88D065E77C8CC2239327C5EDB3A432268E5831",
-        "volume_24h": 1020585,
+        "volume_24h": 1020549,
+        "tvl_usd": 2745589.225423,
         "spread": 0.602847,
         "last_price": 1.0152153977,
         "trust_score": "green"
@@ -54,7 +56,8 @@
       {
         "market": "Uniswap V3 (Ethereum)",
         "pair": "0X5FA487BCA6158C64046B2813623E20755091DA0B/0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48",
-        "volume_24h": 3905.95,
+        "volume_24h": 3914.16,
+        "tvl_usd": 36592.092354,
         "spread": 0.61796,
         "last_price": 1.014565797,
         "trust_score": "yellow"
@@ -63,6 +66,7 @@
         "market": "Uniswap V4 (Base)",
         "pair": "0XFDD22CE6D1F66BC0EC89B20BF16CCB6670F55A5A/0X833589FCD6EDB6E08F4C7C32D4F71B54BDA02913",
         "volume_24h": 86.26,
+        "tvl_usd": null,
         "spread": 0.713723,
         "last_price": 1.0798096519,
         "trust_score": null

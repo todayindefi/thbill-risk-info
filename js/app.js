@@ -215,13 +215,14 @@ function updateLiquidityTable(liquidity) {
     if (!liquidity) return;
 
     document.getElementById('dex-volume').textContent = formatCurrency(liquidity.total_volume_24h);
+    document.getElementById('dex-tvl').textContent = formatCurrency(liquidity.total_tvl_usd);
     document.getElementById('pool-count').textContent = (liquidity.pools || []).length;
 
     const pools = liquidity.pools || [];
     const tbody = document.getElementById('liquidity-table');
 
     if (pools.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="px-5 py-3 text-gray-500">No pools found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-3 text-gray-500">No pools found</td></tr>';
         return;
     }
 
@@ -231,6 +232,7 @@ function updateLiquidityTable(liquidity) {
                 <div class="font-medium">${pool.market}</div>
                 <div class="text-xs text-gray-500">${pool.pair}</div>
             </td>
+            <td class="text-right px-5 py-3">${formatCurrency(pool.tvl_usd)}</td>
             <td class="text-right px-5 py-3">${formatCurrency(pool.volume_24h)}</td>
             <td class="text-right px-5 py-3">${pool.spread ? formatPercent(pool.spread) : '-'}</td>
         </tr>
