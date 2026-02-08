@@ -270,12 +270,20 @@ function updateLiquidityTable(liquidity) {
     const tbody = document.getElementById('liquidity-table');
 
     if (pools.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-3 text-gray-500">No pools found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-3 text-gray-500">No pools found</td></tr>';
         return;
     }
 
     // Sort by TVL descending
     pools.sort((a, b) => (b.tvl_usd || 0) - (a.tvl_usd || 0));
+
+    // Chain display names
+    const chainNames = {
+        'hyperevm': 'HyperEVM',
+        'arbitrum': 'Arbitrum',
+        'ethereum': 'Ethereum',
+        'base': 'Base',
+    };
 
     tbody.innerHTML = pools.map(pool => {
         const depthBuy = pool.depth_2pct_buy;
@@ -286,9 +294,11 @@ function updateLiquidityTable(liquidity) {
             : '';
 
         const pairDisplay = formatPairName(pool.pair);
+        const chainDisplay = chainNames[pool.chain] || pool.chain || '-';
 
         return `
             <tr class="border-t border-gray-700/50">
+                <td class="px-5 py-3 text-gray-400">${chainDisplay}</td>
                 <td class="px-5 py-3">
                     <div class="font-medium">${pool.market}</div>
                     <div class="text-xs text-gray-500">${pairDisplay}</div>
