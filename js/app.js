@@ -222,20 +222,58 @@ function formatDepth(buy, sell) {
     return formatCurrency(buy || sell, 0);
 }
 
+// Token address to symbol mapping
+const TOKEN_SYMBOLS = {
+    // thBILL
+    '0xfdd22ce6d1f66bc0ec89b20bf16ccb6670f55a5a': 'thBILL',
+    '0x5fa487bca6158c64046b2813623e20755091da0b': 'thBILL',
+    // HyperEVM tokens
+    '0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb': 'USDT0',
+    '0x5555555555555555555555555555555555555555': 'WHYPE',
+    '0xfd739d4e423301ce9385c1fb8850539d657c296d': 'kHYPE',
+    '0x111111a1a0667d36bd57c0a9f569b98057111111': 'USDH',
+    '0xb88339cb7199b77e23db6e890353e22632ba630f': 'USDC',
+    // Arbitrum/Ethereum tokens
+    '0xaf88d065e77c8cc2239327c5edb3a432268e5831': 'USDC',
+    '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': 'USDC',
+};
+
+function formatPairName(pair) {
+    // Convert address pair to symbol pair (e.g., "0xABC.../0xDEF..." -> "thBILL/USDC")
+    const parts = pair.split('/');
+    const symbols = parts.map(addr => {
+        const lower = addr.toLowerCase();
+        return TOKEN_SYMBOLS[lower] || addr.slice(0, 8) + '...';
+    });
+    return symbols.join('/');
+}
+
 function updateLiquidityTable(liquidity) {
     if (!liquidity) return;
 
-    document.getElementById('dex-volume').textContent = formatCurrency(liquidity.total_volume_24h);
-    document.getElementById('dex-tvl').textContent = formatCurrency(liquidity.total_tvl_usd);
-    document.getElementById('pool-count').textContent = (liquidity.pools || []).length;
+    const allPools = liquidity.pools || [];
 
-    const pools = liquidity.pools || [];
+    // Filter out pools with TVL < $5000
+    const MIN_TVL = 5000;
+    const pools = allPools.filter(p => (p.tvl_usd || 0) >= MIN_TVL);
+
+    // Update totals based on filtered pools
+    const filteredTvl = pools.reduce((sum, p) => sum + (p.tvl_usd || 0), 0);
+    const filteredVolume = pools.reduce((sum, p) => sum + (p.volume_24h || 0), 0);
+
+    document.getElementById('dex-volume').textContent = formatCurrency(filteredVolume);
+    document.getElementById('dex-tvl').textContent = formatCurrency(filteredTvl);
+    document.getElementById('pool-count').textContent = pools.length;
+
     const tbody = document.getElementById('liquidity-table');
 
     if (pools.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-3 text-gray-500">No pools found</td></tr>';
         return;
     }
+
+    // Sort by TVL descending
+    pools.sort((a, b) => (b.tvl_usd || 0) - (a.tvl_usd || 0));
 
     tbody.innerHTML = pools.map(pool => {
         const depthBuy = pool.depth_2pct_buy;
@@ -245,11 +283,13 @@ function updateLiquidityTable(liquidity) {
             ? `Buy: ${formatCurrency(depthBuy, 0)} / Sell: ${formatCurrency(depthSell, 0)}`
             : '';
 
+        const pairDisplay = formatPairName(pool.pair);
+
         return `
             <tr class="border-t border-gray-700/50">
                 <td class="px-5 py-3">
                     <div class="font-medium">${pool.market}</div>
-                    <div class="text-xs text-gray-500">${pool.pair}</div>
+                    <div class="text-xs text-gray-500">${pairDisplay}</div>
                 </td>
                 <td class="text-right px-5 py-3">${formatCurrency(pool.tvl_usd)}</td>
                 <td class="text-right px-5 py-3" title="${depthTitle}">${depthDisplay}</td>
