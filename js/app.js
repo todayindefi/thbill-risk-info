@@ -376,7 +376,9 @@ function updatePegStatus(peg) {
                 deviationClass = 'text-red-400';
             }
         }
-        const volStr = volume >= 1000 ? '$' + (volume / 1000).toFixed(1) + 'K' : '$' + volume.toFixed(0);
+        const volStr = volume >= 1000000 ? '$' + (volume / 1000000).toFixed(2) + 'M'
+            : volume >= 1000 ? '$' + (volume / 1000).toFixed(1) + 'K'
+            : '$' + volume.toFixed(0);
         return `
             <tr class="border-t border-gray-700/50">
                 <td class="px-5 py-3">${chain}</td>
