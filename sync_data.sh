@@ -11,3 +11,6 @@ else
     echo "$(date): Source file not found: $SOURCE"
     exit 1
 fi
+
+# Sync peg history
+cp /home/danger/PegTracker/data/thbill_peg_history.json /home/danger/thbill-risk-info/data/thbill_peg_history.json 2>/dev/null

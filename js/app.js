@@ -317,6 +317,73 @@ function updateDefiTable(markets) {
     `).join('');
 }
 
+function updatePegStatus(peg) {
+    if (!peg) return;
+
+    const navElem = document.getElementById('peg-nav');
+    const vwapElem = document.getElementById('peg-vwap');
+    const pdElem = document.getElementById('peg-premium-discount');
+
+    if (peg.nav_per_share) {
+        navElem.textContent = '$' + peg.nav_per_share.toFixed(6);
+    }
+    if (peg.vwap) {
+        vwapElem.textContent = '$' + peg.vwap.toFixed(6);
+    }
+
+    if (peg.premium_discount_pct !== null && peg.premium_discount_pct !== undefined) {
+        const pd = peg.premium_discount_pct;
+        const sign = pd >= 0 ? '+' : '';
+        pdElem.textContent = sign + pd.toFixed(4) + '%';
+
+        // Color thresholds: green (within 0.1%), yellow (0.1-0.5%), red (>0.5%)
+        const absPd = Math.abs(pd);
+        if (absPd <= 0.1) {
+            pdElem.classList.add('text-green-400');
+        } else if (absPd <= 0.5) {
+            pdElem.classList.add('text-yellow-400');
+        } else {
+            pdElem.classList.add('text-red-400');
+        }
+    }
+
+    // Per-pool price table
+    const tbody = document.getElementById('peg-pool-table');
+    const poolPrices = peg.per_pool_prices || {};
+    const entries = Object.entries(poolPrices);
+
+    if (entries.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="px-5 py-3 text-gray-500">No pool prices available</td></tr>';
+        return;
+    }
+
+    const nav = peg.nav_per_share;
+    tbody.innerHTML = entries.map(([pool, price]) => {
+        let deviationText = '-';
+        let deviationClass = '';
+        if (nav && price) {
+            const dev = ((price - nav) / nav) * 100;
+            const sign = dev >= 0 ? '+' : '';
+            deviationText = sign + dev.toFixed(4) + '%';
+            const absDev = Math.abs(dev);
+            if (absDev <= 0.1) {
+                deviationClass = 'text-green-400';
+            } else if (absDev <= 0.5) {
+                deviationClass = 'text-yellow-400';
+            } else {
+                deviationClass = 'text-red-400';
+            }
+        }
+        return `
+            <tr class="border-t border-gray-700/50">
+                <td class="px-5 py-3">${pool}</td>
+                <td class="text-right px-5 py-3">$${price.toFixed(4)}</td>
+                <td class="text-right px-5 py-3 ${deviationClass}">${deviationText}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
 // Main fetch and update
 async function fetchAndUpdate() {
     try {
@@ -332,6 +399,7 @@ async function fetchAndUpdate() {
         updateBackingTable(data.backing, data.theo_reported);
         updateTreasuryTable(data.backing);
         updateTheoReported(data.theo_reported, data.backing);
+        updatePegStatus(data.peg);
         updateLiquidityTable(data.secondary_liquidity);
         updateDefiTable(data.defi_markets);
 

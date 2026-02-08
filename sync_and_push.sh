@@ -3,6 +3,7 @@ cd /home/danger/thbill-risk-info
 
 # Sync data
 cp /home/danger/PegTracker/data/thbill_metrics.json data/
+cp /home/danger/PegTracker/data/thbill_peg_history.json data/ 2>/dev/null
 
 # Commit and push if changed
 git add data/
