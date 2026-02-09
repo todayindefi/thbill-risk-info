@@ -108,76 +108,92 @@ function updateBackingTable(backing, theoReported) {
         }
     ];
 
-    // tULTRA rows (only if data available)
+    // tULTRA: single line unless vault != supply
     if (hasTultra) {
-        rows.push({
-            asset: 'tULTRA in Vault',
-            amount: backing.tultra_vault_balance,
-            pct: (backing.tultra_vault_balance / supply) * 100
-        });
-        rows.push({
-            asset: 'tULTRA Supply',
-            amount: backing.tultra_supply,
-            pct: (backing.tultra_supply / supply) * 100
-        });
+        const vaultMatch = backing.tultra_vault_balance != null &&
+            Math.abs(backing.tultra_vault_balance - backing.tultra_supply) < 0.01;
+        if (vaultMatch) {
+            rows.push({
+                asset: 'tULTRA Supply',
+                note: '100% in vault',
+                amount: backing.tultra_supply,
+                pct: (backing.tultra_supply / supply) * 100
+            });
+        } else {
+            rows.push({
+                asset: 'tULTRA in Vault',
+                amount: backing.tultra_vault_balance,
+                pct: (backing.tultra_vault_balance / supply) * 100,
+                isGap: true
+            });
+            rows.push({
+                asset: 'tULTRA Supply',
+                amount: backing.tultra_supply,
+                pct: (backing.tultra_supply / supply) * 100,
+                isGap: true
+            });
+        }
     }
 
-    // ULTRA chain breakdown
-    rows.push(
-        {
-            asset: 'ULTRA (Ethereum)',
-            amount: backing.ultra_ethereum,
-            pct: (backing.ultra_ethereum / supply) * 100
-        },
-        {
-            asset: 'ULTRA (Arbitrum)',
-            amount: backing.ultra_arbitrum,
-            pct: (backing.ultra_arbitrum / supply) * 100
-        },
-        {
-            asset: 'ULTRA (Solana)',
-            amount: backing.ultra_solana,
-            pct: (backing.ultra_solana / supply) * 100
-        },
-        {
-            asset: 'ULTRA Total',
-            amount: backing.ultra_total,
-            pct: (backing.ultra_total / supply) * 100,
-            isTotal: true
-        }
-    );
+    // ULTRA total (T-bills)
+    rows.push({
+        asset: 'ULTRA Total',
+        note: 'T-bills',
+        amount: backing.ultra_total,
+        pct: (backing.ultra_total / supply) * 100
+    });
 
-    // Implied cash from on-chain data (tULTRA - ULTRA)
-    if (hasTultra && backing.implied_cash != null) {
+    // DeFi USDC positions (e.g. Aave)
+    let defiUsdc = 0;
+    if (backing.treasury_defi_positions) {
+        for (const pos of backing.treasury_defi_positions) {
+            defiUsdc += pos.amount;
+            rows.push({
+                asset: `${pos.protocol} ${pos.token}`,
+                note: `Treasury supply on ${pos.protocol}`,
+                amount: pos.amount,
+                pct: (pos.amount / supply) * 100,
+                isCurrency: true
+            });
+        }
+    }
+
+    // Spot USDC
+    const spotUsdc = (backing.treasury_usdc || 0) - defiUsdc;
+    if (spotUsdc > 0.01 || defiUsdc === 0) {
         rows.push({
-            asset: 'Implied Cash',
-            amount: backing.implied_cash,
-            pct: (backing.implied_cash / supply) * 100,
-            isGap: true,
+            asset: 'USDC (spot)',
+            note: 'Treasury wallet',
+            amount: spotUsdc,
+            pct: (spotUsdc / supply) * 100,
             isCurrency: true
         });
     }
 
-    // Treasury USDC
+    // Total backing
+    const totalBacking = (backing.ultra_total || 0) + (backing.treasury_usdc || 0);
+    const backingPct = (totalBacking / supply) * 100;
     rows.push({
-        asset: 'Treasury USDC',
-        amount: backing.treasury_usdc,
-        pct: (backing.treasury_usdc / supply) * 100,
+        asset: 'Total Backing',
+        amount: totalBacking,
+        pct: backingPct,
+        isTotal: true,
         isCurrency: true
     });
 
     const tbody = document.getElementById('backing-table');
     tbody.innerHTML = rows.map(row => {
         let rowClass = '';
-        if (row.isTotal) rowClass = 'bg-gray-900/50 font-medium';
+        if (row.isTotal) rowClass = 'bg-gray-900/50 font-medium border-t border-gray-600';
         if (row.isGap) rowClass = 'bg-yellow-900/20 text-yellow-400';
         if (row.isSupply) rowClass = 'bg-gray-900 font-bold border-b border-gray-700';
 
         const amount = row.isCurrency ? formatCurrency(row.amount, 2) : formatNumber(row.amount, 2);
+        const noteSpan = row.note ? `<span class="text-xs text-gray-500 ml-2">(${row.note})</span>` : '';
 
         return `
             <tr class="${rowClass}">
-                <td class="px-5 py-3">${row.asset}</td>
+                <td class="px-5 py-3">${row.asset}${noteSpan}</td>
                 <td class="text-right px-5 py-3">${amount}</td>
                 <td class="text-right px-5 py-3">${formatPercent(row.pct)}</td>
             </tr>
