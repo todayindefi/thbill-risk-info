@@ -97,13 +97,33 @@ function updateBackingTable(backing, theoReported) {
     if (!backing) return;
 
     const supply = backing.thbill_supply || 1;
-
-    // Use Theo-reported cash if available, otherwise calculate gap
-    const cashAmount = theoReported?.cash_usd || (supply - backing.ultra_total - (backing.treasury_usdc || 0));
-    const cashPct = theoReported?.cash_pct || ((supply - backing.ultra_total - (backing.treasury_usdc || 0)) / supply) * 100;
-    const cashLabel = theoReported?.cash_usd ? 'Cash (Theo reported)' : 'Unverified "Cash"';
+    const hasTultra = backing.tultra_supply != null;
 
     const rows = [
+        {
+            asset: 'thBILL Supply',
+            amount: supply,
+            pct: 100,
+            isSupply: true
+        }
+    ];
+
+    // tULTRA rows (only if data available)
+    if (hasTultra) {
+        rows.push({
+            asset: 'tULTRA in Vault',
+            amount: backing.tultra_vault_balance,
+            pct: (backing.tultra_vault_balance / supply) * 100
+        });
+        rows.push({
+            asset: 'tULTRA Supply',
+            amount: backing.tultra_supply,
+            pct: (backing.tultra_supply / supply) * 100
+        });
+    }
+
+    // ULTRA chain breakdown
+    rows.push(
         {
             asset: 'ULTRA (Ethereum)',
             amount: backing.ultra_ethereum,
@@ -120,38 +140,38 @@ function updateBackingTable(backing, theoReported) {
             pct: (backing.ultra_solana / supply) * 100
         },
         {
-            asset: 'Treasury USDC',
-            amount: backing.treasury_usdc,
-            pct: (backing.treasury_usdc / supply) * 100,
-            isCurrency: true
-        },
-        {
             asset: 'ULTRA Total',
             amount: backing.ultra_total,
             pct: (backing.ultra_total / supply) * 100,
             isTotal: true
-        },
-        {
-            asset: cashLabel,
-            amount: cashAmount,
-            pct: cashPct,
+        }
+    );
+
+    // Implied cash from on-chain data (tULTRA - ULTRA)
+    if (hasTultra && backing.implied_cash != null) {
+        rows.push({
+            asset: 'Implied Cash',
+            amount: backing.implied_cash,
+            pct: (backing.implied_cash / supply) * 100,
             isGap: true,
             isCurrency: true
-        },
-        {
-            asset: 'thBILL Supply',
-            amount: supply,
-            pct: 100,
-            isSupply: true
-        }
-    ];
+        });
+    }
+
+    // Treasury USDC
+    rows.push({
+        asset: 'Treasury USDC',
+        amount: backing.treasury_usdc,
+        pct: (backing.treasury_usdc / supply) * 100,
+        isCurrency: true
+    });
 
     const tbody = document.getElementById('backing-table');
     tbody.innerHTML = rows.map(row => {
         let rowClass = '';
         if (row.isTotal) rowClass = 'bg-gray-900/50 font-medium';
         if (row.isGap) rowClass = 'bg-yellow-900/20 text-yellow-400';
-        if (row.isSupply) rowClass = 'bg-gray-900 font-bold border-t border-gray-700';
+        if (row.isSupply) rowClass = 'bg-gray-900 font-bold border-b border-gray-700';
 
         const amount = row.isCurrency ? formatCurrency(row.amount, 2) : formatNumber(row.amount, 2);
 
@@ -342,6 +362,16 @@ function updateTheoReported(theo, backing) {
             <p class="mt-1">Discrepancy: ${discrepancy > 0 ? '+' : ''}${formatPercent(discrepancy, 2)} (within rounding)</p>
             <p class="mt-1 text-gray-600">Source: ${theo.source}</p>
         </div>
+        ${backing && backing.implied_cash != null && theo.cash_usd != null ? `
+        <div class="mt-4 pt-4 border-t border-gray-700">
+            <div class="text-sm font-medium text-gray-300 mb-2">Implied vs Reported Cash</div>
+            <div class="text-xs text-gray-400 space-y-1">
+                <p>Implied cash (tULTRA − ULTRA): <span class="text-yellow-400">${formatCurrency(backing.implied_cash, 2)}</span></p>
+                <p>Theo reported cash: <span class="text-white">${formatCurrency(theo.cash_usd, 2)}</span></p>
+                <p>Discrepancy: <span class="${Math.abs(theo.cash_usd - backing.implied_cash) > 1000000 ? 'text-yellow-400' : 'text-green-400'}">${formatCurrency(theo.cash_usd - backing.implied_cash, 2)}</span></p>
+            </div>
+        </div>
+        ` : ''}
     `;
 }
 
