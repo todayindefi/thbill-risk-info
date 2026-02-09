@@ -617,9 +617,9 @@ function updateLiquidityPegRating(peg, liquidity) {
     if (peg && peg.premium_discount_pct !== null && peg.premium_discount_pct !== undefined) {
         const absDev = Math.abs(peg.premium_discount_pct);
         if (absDev < 0.1) pegScore = 5;
-        else if (absDev < 0.25) pegScore = 4;
-        else if (absDev < 0.5) pegScore = 3;
-        else if (absDev < 1.0) pegScore = 2;
+        else if (absDev < 0.2) pegScore = 4;
+        else if (absDev < 0.3) pegScore = 3;
+        else if (absDev < 0.4) pegScore = 2;
         else pegScore = 1;
     }
 
