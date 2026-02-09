@@ -605,6 +605,82 @@ async function renderPegChart() {
     }
 }
 
+// Dynamic Liquidity & Peg star rating
+function updateLiquidityPegRating(peg, liquidity) {
+    const starsEl = document.getElementById('rating-liquidity-stars');
+    const noteEl = document.getElementById('rating-liquidity-note');
+    if (!starsEl || !noteEl) return;
+    if (!peg && !liquidity) return;
+
+    // --- Peg score ---
+    let pegScore = 3;
+    if (peg && peg.premium_discount_pct !== null && peg.premium_discount_pct !== undefined) {
+        const absDev = Math.abs(peg.premium_discount_pct);
+        if (absDev < 0.1) pegScore = 5;
+        else if (absDev < 0.25) pegScore = 4;
+        else if (absDev < 0.5) pegScore = 3;
+        else if (absDev < 1.0) pegScore = 2;
+        else pegScore = 1;
+    }
+
+    // --- Depth score (sum of average 2% depth across pools) ---
+    let depthScore = 3;
+    if (liquidity && liquidity.pools) {
+        let totalDepth = 0;
+        for (const pool of liquidity.pools) {
+            const buy = pool.depth_2pct_buy;
+            const sell = pool.depth_2pct_sell;
+            if (buy !== null && sell !== null) {
+                totalDepth += (buy + sell) / 2;
+            } else if (buy !== null) {
+                totalDepth += buy;
+            } else if (sell !== null) {
+                totalDepth += sell;
+            }
+        }
+        if (totalDepth > 2000000) depthScore = 5;
+        else if (totalDepth > 1000000) depthScore = 4;
+        else if (totalDepth > 500000) depthScore = 3;
+        else if (totalDepth > 100000) depthScore = 2;
+        else depthScore = 1;
+    }
+
+    // --- Volume score ---
+    let volumeScore = 3;
+    if (liquidity && liquidity.total_volume_24h !== null && liquidity.total_volume_24h !== undefined) {
+        const vol = liquidity.total_volume_24h;
+        if (vol > 5000000) volumeScore = 5;
+        else if (vol > 1000000) volumeScore = 4;
+        else if (vol > 500000) volumeScore = 3;
+        else if (vol > 100000) volumeScore = 2;
+        else volumeScore = 1;
+    }
+
+    // --- Final rating ---
+    const avg = (pegScore + depthScore + volumeScore) / 3;
+    const finalStars = Math.round(avg);
+
+    const filled = '\u2605'.repeat(finalStars);
+    const empty = '\u2606'.repeat(5 - finalStars);
+    starsEl.textContent = filled + empty;
+    starsEl.title = `${finalStars}/5 stars (peg ${pegScore}, depth ${depthScore}, volume ${volumeScore})`;
+
+    // --- Dynamic subtitle based on weakest factor ---
+    const scores = { peg: pegScore, depth: depthScore, volume: volumeScore };
+    const minScore = Math.min(pegScore, depthScore, volumeScore);
+    let subtitle;
+    if (minScore >= 4) {
+        subtitle = 'Strong liquidity & peg';
+    } else if (scores.peg === minScore) {
+        subtitle = pegScore <= 2 ? 'Significant depeg' : 'Minor peg deviation';
+    } else if (scores.depth === minScore) {
+        subtitle = 'Thin DEX depth';
+    } else {
+        subtitle = 'Low trading volume';
+    }
+    noteEl.textContent = subtitle;
+}
+
 // Main fetch and update
 async function fetchAndUpdate() {
     try {
@@ -622,6 +698,7 @@ async function fetchAndUpdate() {
         updatePegStatus(data.peg);
         renderPegChart();
         updateLiquidityTable(data.secondary_liquidity);
+        updateLiquidityPegRating(data.peg, data.secondary_liquidity);
         updateDefiTable(data.defi_markets);
 
     } catch (error) {
