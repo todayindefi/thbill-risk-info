@@ -42,10 +42,11 @@
                 <h2 class="text-xl font-semibold mb-4 text-white">Executive Summary</h2>
                 <p class="text-gray-300 leading-relaxed">
                     thBILL is a tokenized basket of US Treasury bills issued by Theo Network. It aims to provide
-                    on-chain exposure to short-duration T-bills through Libeara's ULTRA token. While the underlying
-                    collateral (US Treasuries) is high quality, the product has centralization risks typical of
-                    RWA tokens, including reliance on the issuer for minting/redemption and limited on-chain
-                    transparency for a portion of reserves.
+                    on-chain exposure to short-duration T-bills through Libeara's ULTRA token, wrapped in Theo's
+                    tULTRA. While the underlying collateral (US Treasuries) is high quality, approximately 21% of
+                    backing is held as off-chain cash with no on-chain proof-of-reserves. The product also has
+                    centralization risks typical of RWA tokens, including reliance on the issuer for
+                    minting/redemption.
                 </p>
             </div>
         </section>
@@ -75,9 +76,9 @@
                     <div class="text-xs text-gray-400 mt-1">Standard RWA</div>
                 </div>
                 <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 text-center">
-                    <div class="text-2xl mb-2" title="3/5 stars">★★★☆☆</div>
+                    <div class="text-2xl mb-2" title="2/5 stars">★★☆☆☆</div>
                     <div class="text-sm font-medium text-white">Transparency</div>
-                    <div class="text-xs text-gray-400 mt-1">77% on-chain</div>
+                    <div class="text-xs text-gray-400 mt-1">~21% unverifiable</div>
                 </div>
             </div>
         </section>
@@ -318,8 +319,10 @@
                     <h3 class="font-semibold text-white mb-2">Operational Risk</h3>
                     <p class="text-gray-300 text-sm">
                         Standard RWA operational risks apply: custodian failure, regulatory action, banking
-                        issues, oracle failures. The ~22% "Cash" reserves held off-chain are not independently
-                        verifiable. Users rely on Theo's attestations for this portion.
+                        issues, oracle failures. The tULTRA layer reveals that ~21% of backing ($34M) is
+                        implied cash with no on-chain proof-of-reserves. Theo self-reports $37M cash — a
+                        ~$2.8M discrepancy vs the on-chain implied figure. Users must trust Theo's
+                        attestations for this unverifiable portion.
                     </p>
                 </div>
             </div>
