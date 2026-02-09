@@ -93,7 +93,7 @@ function updateNetFlow(flow) {
     }
 }
 
-function updateBackingTable(backing, theoReported) {
+function updateBackingTable(backing) {
     if (!backing) return;
 
     const supply = backing.thbill_supply || 1;
@@ -348,49 +348,6 @@ function updateLiquidityTable(liquidity) {
     }).join('');
 }
 
-function updateTheoReported(theo, backing) {
-    const container = document.getElementById('theo-reported');
-    if (!container) return;
-
-    if (!theo || !theo.cash_pct) {
-        container.innerHTML = '<p class="text-gray-500">Theo dashboard data unavailable</p>';
-        return;
-    }
-
-    const onChainPct = backing ? (backing.backing_ratio_ultra_only * 100) : 0;
-    const discrepancy = theo.money_market_pct - onChainPct;
-
-    container.innerHTML = `
-        <div class="grid grid-cols-2 gap-4 mb-4">
-            <div class="bg-gray-900 rounded p-4">
-                <div class="text-sm text-gray-400">Money Market</div>
-                <div class="text-xl font-bold text-green-400">${formatPercent(theo.money_market_pct)}</div>
-                <div class="text-xs text-gray-500">${formatCurrency(theo.money_market_usd)}</div>
-            </div>
-            <div class="bg-gray-900 rounded p-4">
-                <div class="text-sm text-gray-400">Cash (Off-chain)</div>
-                <div class="text-xl font-bold text-yellow-400">${formatPercent(theo.cash_pct)}</div>
-                <div class="text-xs text-gray-500">${formatCurrency(theo.cash_usd)}</div>
-            </div>
-        </div>
-        <div class="text-xs text-gray-500">
-            <p>On-chain verified: ${formatPercent(onChainPct)} | Theo reported: ${formatPercent(theo.money_market_pct)}</p>
-            <p class="mt-1">Discrepancy: ${discrepancy > 0 ? '+' : ''}${formatPercent(discrepancy, 2)} (within rounding)</p>
-            <p class="mt-1 text-gray-600">Source: ${theo.source}</p>
-        </div>
-        ${backing && backing.implied_cash != null && theo.cash_usd != null ? `
-        <div class="mt-4 pt-4 border-t border-gray-700">
-            <div class="text-sm font-medium text-gray-300 mb-2">Implied vs Reported Cash</div>
-            <div class="text-xs text-gray-400 space-y-1">
-                <p>Implied cash (tULTRA − ULTRA): <span class="text-yellow-400">${formatCurrency(backing.implied_cash, 2)}</span></p>
-                <p>Theo reported cash: <span class="text-white">${formatCurrency(theo.cash_usd, 2)}</span></p>
-                <p>Discrepancy: <span class="${Math.abs(theo.cash_usd - backing.implied_cash) > 1000000 ? 'text-yellow-400' : 'text-green-400'}">${formatCurrency(theo.cash_usd - backing.implied_cash, 2)}</span></p>
-            </div>
-        </div>
-        ` : ''}
-    `;
-}
-
 function updateDefiTable(markets) {
     if (!markets) return;
 
@@ -500,9 +457,8 @@ async function fetchAndUpdate() {
         updateTVL(data.tvl_usd);
         updateBackingRatio(data.backing);
         updateNetFlow(data.redemption_flow);
-        updateBackingTable(data.backing, data.theo_reported);
+        updateBackingTable(data.backing);
         updateTreasuryTable(data.backing);
-        updateTheoReported(data.theo_reported, data.backing);
         updatePegStatus(data.peg);
         updateLiquidityTable(data.secondary_liquidity);
         updateDefiTable(data.defi_markets);
