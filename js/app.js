@@ -5,6 +5,7 @@
 
 // Configuration
 const METRICS_URL = 'data/thbill_metrics.json';
+const PEG_HISTORY_URL = 'data/thbill_peg_history.json';
 
 // Utility functions
 function formatNumber(num, decimals = 0) {
@@ -445,6 +446,165 @@ function updatePegStatus(peg) {
     }).join('');
 }
 
+// Peg history chart
+let pegChartInstance = null;
+
+async function renderPegChart() {
+    try {
+        const response = await fetch(PEG_HISTORY_URL);
+        if (!response.ok) return;
+        const history = await response.json();
+
+        // Filter outliers (early data has 10.6% artifacts)
+        const filtered = history.filter(d => Math.abs(d.premium_discount_pct) <= 5);
+        if (filtered.length === 0) return;
+
+        const labels = filtered.map(d => {
+            const ts = d.timestamp.endsWith('Z') ? d.timestamp : d.timestamp + 'Z';
+            return new Date(ts);
+        });
+        const values = filtered.map(d => d.premium_discount_pct);
+
+        const canvas = document.getElementById('peg-chart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        if (pegChartInstance) {
+            pegChartInstance.destroy();
+        }
+
+        pegChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Premium/Discount %',
+                    data: values,
+                    borderColor: '#9ca3af',
+                    borderWidth: 1.5,
+                    pointRadius: 0,
+                    pointHitRadius: 8,
+                    fill: {
+                        target: 'origin'
+                    },
+                    segment: {
+                        borderColor: function(ctx) {
+                            const y = ctx.p1.parsed.y;
+                            return y >= 0 ? '#4ade80' : '#f87171';
+                        },
+                        backgroundColor: function(ctx) {
+                            const y = ctx.p1.parsed.y;
+                            return y >= 0 ? 'rgba(74, 222, 128, 0.15)' : 'rgba(248, 113, 113, 0.15)';
+                        }
+                    },
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1f2937',
+                        titleColor: '#d1d5db',
+                        bodyColor: '#f3f4f6',
+                        borderColor: '#374151',
+                        borderWidth: 1,
+                        callbacks: {
+                            title: function(items) {
+                                const date = new Date(items[0].parsed.x);
+                                return date.toLocaleString('en-US', {
+                                    month: 'short', day: 'numeric',
+                                    hour: '2-digit', minute: '2-digit',
+                                    timeZoneName: 'short'
+                                });
+                            },
+                            label: function(item) {
+                                const val = item.parsed.y;
+                                const sign = val >= 0 ? '+' : '';
+                                return sign + val.toFixed(4) + '%';
+                            }
+                        }
+                    },
+                    annotation: {
+                        annotations: {
+                            zeroLine: {
+                                type: 'line',
+                                yMin: 0,
+                                yMax: 0,
+                                borderColor: '#6b7280',
+                                borderWidth: 2
+                            },
+                            upperBand: {
+                                type: 'line',
+                                yMin: 0.5,
+                                yMax: 0.5,
+                                borderColor: '#374151',
+                                borderWidth: 1,
+                                borderDash: [6, 4],
+                                label: {
+                                    display: true,
+                                    content: '+0.5%',
+                                    position: 'start',
+                                    backgroundColor: 'transparent',
+                                    color: '#6b7280',
+                                    font: { size: 10 }
+                                }
+                            },
+                            lowerBand: {
+                                type: 'line',
+                                yMin: -0.5,
+                                yMax: -0.5,
+                                borderColor: '#374151',
+                                borderWidth: 1,
+                                borderDash: [6, 4],
+                                label: {
+                                    display: true,
+                                    content: '-0.5%',
+                                    position: 'start',
+                                    backgroundColor: 'transparent',
+                                    color: '#6b7280',
+                                    font: { size: 10 }
+                                }
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            tooltipFormat: 'MMM d, HH:mm',
+                            displayFormats: {
+                                hour: 'MMM d HH:mm',
+                                day: 'MMM d'
+                            }
+                        },
+                        grid: { color: '#1f2937' },
+                        ticks: { color: '#6b7280', maxTicksLimit: 8 }
+                    },
+                    y: {
+                        grid: { color: '#1f2937' },
+                        ticks: {
+                            color: '#6b7280',
+                            callback: function(value) {
+                                return value.toFixed(2) + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Failed to render peg chart:', error);
+    }
+}
+
 // Main fetch and update
 async function fetchAndUpdate() {
     try {
@@ -460,6 +620,7 @@ async function fetchAndUpdate() {
         updateBackingTable(data.backing);
         updateTreasuryTable(data.backing);
         updatePegStatus(data.peg);
+        renderPegChart();
         updateLiquidityTable(data.secondary_liquidity);
         updateDefiTable(data.defi_markets);
 
