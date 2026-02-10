@@ -60,7 +60,7 @@ function updateTVL(tvlData) {
 function updateBackingRatio(backing) {
     if (!backing) return;
 
-    const ratio = backing.backing_ratio_ultra_only;
+    const ratio = backing.backing_ratio_with_usdc;
     const elem = document.getElementById('backing-ratio');
     elem.textContent = formatPercent(ratio * 100);
 
