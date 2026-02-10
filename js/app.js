@@ -352,25 +352,94 @@ function updateLiquidityTable(liquidity) {
 function updateDefiTable(markets) {
     if (!markets) return;
 
-    const tbody = document.getElementById('defi-table');
+    const PROTOCOL_CATEGORY = {
+        'pendle': 'pendle',
+        'uniswap-v3': 'dex',
+        'project-x': 'dex',
+    };
 
-    if (markets.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-3 text-gray-500">No markets found</td></tr>';
-        return;
+    const mmMarkets = [];
+    const dexMarkets = [];
+    const pendleMarkets = [];
+
+    for (const m of markets) {
+        const cat = PROTOCOL_CATEGORY[m.protocol] || 'mm';
+        if (cat === 'pendle') pendleMarkets.push(m);
+        else if (cat === 'dex') dexMarkets.push(m);
+        else mmMarkets.push(m);
     }
 
-    // Sort by TVL descending
-    const sorted = [...markets].sort((a, b) => (b.tvl_usd || 0) - (a.tvl_usd || 0));
+    const sortByTvl = (a, b) => (b.tvl_usd || 0) - (a.tvl_usd || 0);
+    const emptyRow = '<tr><td colspan="5" class="px-5 py-3 text-gray-500">No markets found</td></tr>';
 
-    tbody.innerHTML = sorted.slice(0, 10).map(market => `
-        <tr class="border-t border-gray-700/50">
-            <td class="px-5 py-3 capitalize">${market.protocol || '-'}</td>
-            <td class="px-5 py-3">${market.chain || '-'}</td>
-            <td class="px-5 py-3">${market.pool || '-'}</td>
-            <td class="text-right px-5 py-3">${formatCurrency(market.tvl_usd)}</td>
-            <td class="text-right px-5 py-3">${market.apy ? formatPercent(market.apy) : '-'}</td>
-        </tr>
-    `).join('');
+    // Render Money Markets
+    const mmTbody = document.getElementById('defi-mm-table');
+    if (mmMarkets.length === 0) {
+        mmTbody.innerHTML = emptyRow;
+    } else {
+        mmTbody.innerHTML = mmMarkets.sort(sortByTvl).map(market => `
+            <tr class="border-t border-gray-700/50">
+                <td class="px-5 py-3 capitalize">${market.protocol || '-'}</td>
+                <td class="px-5 py-3">${market.chain || '-'}</td>
+                <td class="px-5 py-3">${market.pool || '-'}</td>
+                <td class="text-right px-5 py-3">${formatCurrency(market.tvl_usd)}</td>
+                <td class="text-right px-5 py-3">${market.apy ? formatPercent(market.apy) : '-'}</td>
+            </tr>
+        `).join('');
+    }
+
+    // Render DEXs
+    const dexTbody = document.getElementById('defi-dex-table');
+    if (dexMarkets.length === 0) {
+        dexTbody.innerHTML = emptyRow;
+    } else {
+        dexTbody.innerHTML = dexMarkets.sort(sortByTvl).map(market => `
+            <tr class="border-t border-gray-700/50">
+                <td class="px-5 py-3 capitalize">${market.protocol || '-'}</td>
+                <td class="px-5 py-3">${market.chain || '-'}</td>
+                <td class="px-5 py-3">${market.pool || '-'}</td>
+                <td class="text-right px-5 py-3">${formatCurrency(market.tvl_usd)}</td>
+                <td class="text-right px-5 py-3">${market.apy ? formatPercent(market.apy) : '-'}</td>
+            </tr>
+        `).join('');
+    }
+
+    // Render Pendle
+    const pendleTbody = document.getElementById('defi-pendle-table');
+    if (pendleMarkets.length === 0) {
+        pendleTbody.innerHTML = emptyRow;
+    } else {
+        pendleTbody.innerHTML = pendleMarkets.sort(sortByTvl).map(market => {
+            const meta = market.pool_meta || '';
+
+            // Parse pool type
+            let poolType = '-';
+            if (/buying\s*PT/i.test(meta)) poolType = 'PT (Fixed Yield)';
+            else if (/For\s*LP/i.test(meta)) poolType = 'LP';
+
+            // Parse maturity date from format like "19FEB2026"
+            let maturity = '-';
+            const dateMatch = meta.match(/(\d{1,2})([A-Z]{3})(\d{4})/);
+            if (dateMatch) {
+                const months = { JAN: 'Jan', FEB: 'Feb', MAR: 'Mar', APR: 'Apr', MAY: 'May', JUN: 'Jun',
+                                 JUL: 'Jul', AUG: 'Aug', SEP: 'Sep', OCT: 'Oct', NOV: 'Nov', DEC: 'Dec' };
+                const day = dateMatch[1];
+                const mon = months[dateMatch[2]] || dateMatch[2];
+                const year = dateMatch[3];
+                maturity = `${day} ${mon} ${year}`;
+            }
+
+            return `
+                <tr class="border-t border-gray-700/50">
+                    <td class="px-5 py-3">${poolType}</td>
+                    <td class="px-5 py-3">${market.chain || '-'}</td>
+                    <td class="px-5 py-3">${maturity}</td>
+                    <td class="text-right px-5 py-3">${formatCurrency(market.tvl_usd)}</td>
+                    <td class="text-right px-5 py-3">${market.apy ? formatPercent(market.apy) : '-'}</td>
+                </tr>
+            `;
+        }).join('');
+    }
 }
 
 function updatePegStatus(peg) {
