@@ -449,12 +449,8 @@ function updatePegStatus(peg) {
 // Peg history chart
 let pegChartInstance = null;
 
-async function renderPegChart() {
+function renderPegChart(history) {
     try {
-        const response = await fetch(PEG_HISTORY_URL);
-        if (!response.ok) return;
-        const history = await response.json();
-
         // Filter outliers (early data has 10.6% artifacts)
         const filtered = history.filter(d => Math.abs(d.premium_discount_pct) <= 5);
         if (filtered.length === 0) return;
@@ -606,21 +602,26 @@ async function renderPegChart() {
 }
 
 // Dynamic Liquidity & Peg star rating
-function updateLiquidityPegRating(peg, liquidity) {
+function updateLiquidityPegRating(peg, liquidity, pegHistory) {
     const starsEl = document.getElementById('rating-liquidity-stars');
     const noteEl = document.getElementById('rating-liquidity-note');
     if (!starsEl || !noteEl) return;
     if (!peg && !liquidity) return;
 
-    // --- Peg score ---
+    // --- Peg score (7-day avg absolute deviation) ---
     let pegScore = 3;
-    if (peg && peg.premium_discount_pct !== null && peg.premium_discount_pct !== undefined) {
-        const absDev = Math.abs(peg.premium_discount_pct);
-        if (absDev < 0.1) pegScore = 5;
-        else if (absDev < 0.2) pegScore = 4;
-        else if (absDev < 0.3) pegScore = 3;
-        else if (absDev < 0.4) pegScore = 2;
-        else pegScore = 1;
+    const validHistory = (pegHistory || []).filter(d =>
+        d.premium_discount_pct !== null &&
+        d.premium_discount_pct !== undefined &&
+        Math.abs(d.premium_discount_pct) <= 5
+    );
+    if (validHistory.length > 0) {
+        const avgAbsDev = validHistory.reduce((sum, d) => sum + Math.abs(d.premium_discount_pct), 0) / validHistory.length;
+        if (avgAbsDev < 0.15)      pegScore = 5;   // Very tight
+        else if (avgAbsDev < 0.30) pegScore = 4;   // Tight
+        else if (avgAbsDev < 0.50) pegScore = 3;   // Acceptable
+        else if (avgAbsDev < 1.00) pegScore = 2;   // Loose
+        else                       pegScore = 1;   // Significant depeg
     }
 
     // --- Depth score (sum of average 2% depth across pools) ---
@@ -696,9 +697,16 @@ async function fetchAndUpdate() {
         updateBackingTable(data.backing);
         updateTreasuryTable(data.backing);
         updatePegStatus(data.peg);
-        renderPegChart();
+
+        let pegHistory = [];
+        try {
+            const histResp = await fetch(PEG_HISTORY_URL);
+            if (histResp.ok) pegHistory = await histResp.json();
+        } catch (e) { /* use empty array fallback */ }
+
+        renderPegChart(pegHistory);
         updateLiquidityTable(data.secondary_liquidity);
-        updateLiquidityPegRating(data.peg, data.secondary_liquidity);
+        updateLiquidityPegRating(data.peg, data.secondary_liquidity, pegHistory);
         updateDefiTable(data.defi_markets);
 
     } catch (error) {
