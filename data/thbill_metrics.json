@@ -2,11 +2,11 @@
   "asset": "thBILL",
   "vault_address": "0x5fa487bca6158c64046b2813623e20755091da0b",
   "treasury_address": "0xAECCa546baFB16735b273702632C8Cbb83509d8F",
-  "timestamp": "2026-02-19T10:20:01.934613",
+  "timestamp": "2026-02-19T11:20:01.774148",
   "tvl_usd": {
-    "total": 129298187.74599001,
+    "total": 129298188.50602001,
     "by_chain": {
-      "Ethereum": 66857497.30932,
+      "Ethereum": 66857498.06935,
       "Solana": 25925450,
       "Arbitrum": 36515240.43667
     }
@@ -39,19 +39,19 @@
     "note": null
   },
   "secondary_liquidity": {
-    "total_volume_24h": 12573314.140000002,
-    "total_tvl_usd": 4196007.867433132,
+    "total_volume_24h": 12572675.629999999,
+    "total_tvl_usd": 4195504.164632704,
     "pools": [
       {
         "market": "Uniswap V3 (Arbitrum One) (+1 aggregators)",
         "chain": "arbitrum",
         "pair": "0XFDD22CE6D1F66BC0EC89B20BF16CCB6670F55A5A/0XAF88D065E77C8CC2239327C5EDB3A432268E5831",
-        "volume_24h": 10752607.71,
+        "volume_24h": 10764008.479999999,
         "tvl_usd": 2756388,
         "depth_2pct_buy": 1005949.316406,
         "depth_2pct_sell": 1474694.628906,
-        "spread": 0.602888,
-        "last_price": 1.0145458588,
+        "spread": 0.602886,
+        "last_price": 1.0144942101,
         "trust_score": "green",
         "aggregators": [
           "Uniswap V3 (Arbitrum One)",
@@ -59,10 +59,41 @@
         ]
       },
       {
+        "market": "Project X (+3 aggregators)",
+        "chain": "hyperevm",
+        "pair": "0XB8CE59FC3717ADA4C02EADF9682A9E934F625EBB/0XFDD22CE6D1F66BC0EC89B20BF16CCB6670F55A5A",
+        "volume_24h": 1719424.48,
+        "tvl_usd": 1358382.137071,
+        "depth_2pct_buy": 269872.692871,
+        "depth_2pct_sell": 1079190.771484,
+        "spread": 0.602895,
+        "last_price": 1.0148061855291861,
+        "trust_score": "green",
+        "aggregators": [
+          "Project X",
+          "Upheaval Finance",
+          "UltraSolid V3",
+          "HyperSwap V3"
+        ]
+      },
+      {
+        "market": "Uniswap V3 (Ethereum)",
+        "chain": "ethereum",
+        "pair": "0X5FA487BCA6158C64046B2813623E20755091DA0B/0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48",
+        "volume_24h": 29192,
+        "tvl_usd": 33011.55847,
+        "depth_2pct_buy": 1625.863646,
+        "depth_2pct_sell": 9560.354613,
+        "spread": 0.618532,
+        "last_price": 1.0143663112,
+        "trust_score": "yellow",
+        "aggregators": null
+      },
+      {
         "market": "Project X",
         "chain": "hyperevm",
         "pair": "0X111111A1A0667D36BD57C0A9F569B98057111111/0XFDD22CE6D1F66BC0EC89B20BF16CCB6670F55A5A",
-        "volume_24h": 36346,
+        "volume_24h": 36156,
         "tvl_usd": 40616.570278,
         "depth_2pct_buy": null,
         "depth_2pct_sell": null,
@@ -72,46 +103,28 @@
         "aggregators": null
       },
       {
-        "market": "Project X (+3 aggregators)",
-        "chain": "hyperevm",
-        "pair": "0XB8CE59FC3717ADA4C02EADF9682A9E934F625EBB/0XFDD22CE6D1F66BC0EC89B20BF16CCB6670F55A5A",
-        "volume_24h": 1730938.3299999998,
-        "tvl_usd": 1358787.6089629997,
-        "depth_2pct_buy": 269872.692871,
-        "depth_2pct_sell": 1079190.771484,
-        "spread": 0.602895,
-        "last_price": 1.0148071884831669,
-        "trust_score": null,
-        "aggregators": [
-          "Upheaval Finance",
-          "UltraSolid V3",
-          "HyperSwap V3",
-          "Project X"
-        ]
-      },
-      {
         "market": "Project X",
         "chain": "hyperevm",
         "pair": "0XB88339CB7199B77E23DB6E890353E22632BA630F/0XFDD22CE6D1F66BC0EC89B20BF16CCB6670F55A5A",
-        "volume_24h": 21965,
-        "tvl_usd": 5402.26114,
+        "volume_24h": 21839,
+        "tvl_usd": 5401.594988,
         "depth_2pct_buy": 1625.863646,
         "depth_2pct_sell": 3456.900023,
-        "spread": 0.658738,
-        "last_price": 1.014569281540118,
-        "trust_score": null,
+        "spread": 0.659203,
+        "last_price": 1.014558231579339,
+        "trust_score": "green",
         "aggregators": null
       },
       {
         "market": "Project X",
         "chain": "hyperevm",
         "pair": "0XFDD22CE6D1F66BC0EC89B20BF16CCB6670F55A5A/0X5555555555555555555555555555555555555555",
-        "volume_24h": 1238.46,
-        "tvl_usd": 931.6117994710528,
+        "volume_24h": 1180.99,
+        "tvl_usd": 878.1793658468978,
         "depth_2pct_buy": null,
         "depth_2pct_sell": null,
-        "spread": 0.868889,
-        "last_price": 0.03549657577,
+        "spread": 0.878451,
+        "last_price": 0.03563974761,
         "trust_score": "green",
         "aggregators": null
       },
@@ -119,46 +132,33 @@
         "market": "Project X",
         "chain": "hyperevm",
         "pair": "0XFD739D4E423301CE9385C1FB8850539D657C296D/0XFDD22CE6D1F66BC0EC89B20BF16CCB6670F55A5A",
-        "volume_24h": 955.64,
-        "tvl_usd": 870.2567826613114,
+        "volume_24h": 874.68,
+        "tvl_usd": 826.1244598568499,
         "depth_2pct_buy": null,
         "depth_2pct_sell": null,
-        "spread": 0.649414,
-        "last_price": 0.03507277119529566,
+        "spread": 0.649536,
+        "last_price": 0.03527732835826878,
         "trust_score": "green",
-        "aggregators": null
-      },
-      {
-        "market": "Uniswap V3 (Ethereum)",
-        "chain": "ethereum",
-        "pair": "0X5FA487BCA6158C64046B2813623E20755091DA0B/0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48",
-        "volume_24h": 29263,
-        "tvl_usd": 33011.55847,
-        "depth_2pct_buy": 1625.863646,
-        "depth_2pct_sell": 9560.354613,
-        "spread": 0.618532,
-        "last_price": 1.0143663112,
-        "trust_score": null,
         "aggregators": null
       }
     ]
   },
   "peg": {
     "nav_per_share": 1.018535,
-    "vwap": 1.014582,
-    "premium_discount_pct": -0.3881,
+    "vwap": 1.014537,
+    "premium_discount_pct": -0.3925,
     "per_chain_prices": {
       "Arbitrum": {
-        "vwap": 1.014546,
-        "volume_24h": 10752607.71
+        "vwap": 1.014494,
+        "volume_24h": 10764008.48
       },
       "HyperEVM": {
-        "vwap": 1.014801,
-        "volume_24h": 1789249.33
+        "vwap": 1.0148,
+        "volume_24h": 1777419.48
       },
       "Ethereum": {
         "vwap": 1.014366,
-        "volume_24h": 29263.0
+        "volume_24h": 29192.0
       }
     }
   },
@@ -177,9 +177,9 @@
       "protocol": "euler-v2",
       "chain": "Arbitrum",
       "pool": "THBILL",
-      "tvl_usd": 3308534,
-      "apy": 1.40041,
-      "apy_base": 1.40041,
+      "tvl_usd": 4325334,
+      "apy": 0.50663,
+      "apy_base": 0.50663,
       "apy_reward": null,
       "pool_meta": "EVK Vault ethBILL-2"
     },
@@ -197,19 +197,19 @@
       "protocol": "pendle",
       "chain": "Arbitrum",
       "pool": "THBILL",
-      "tvl_usd": 1907524,
-      "apy": 4.51415,
-      "apy_base": 3.8328,
-      "apy_reward": 0.68135,
+      "tvl_usd": 2009589,
+      "apy": 4.44445,
+      "apy_base": 3.79741,
+      "apy_reward": 0.64703,
       "pool_meta": "For LP | Maturity 18JUN2026"
     },
     {
       "protocol": "pendle",
       "chain": "Arbitrum",
       "pool": "THBILL",
-      "tvl_usd": 1907524,
-      "apy": 4.43088,
-      "apy_base": 4.43088,
+      "tvl_usd": 2009589,
+      "apy": 4.22755,
+      "apy_base": 4.22755,
       "apy_reward": null,
       "pool_meta": "For buying PT-thBILL-18JUN2026"
     },
@@ -217,9 +217,9 @@
       "protocol": "project-x",
       "chain": "Hyperliquid L1",
       "pool": "USD\u20ae0-THBILL",
-      "tvl_usd": 1389796,
-      "apy": 3.67873,
-      "apy_base": 3.67873,
+      "tvl_usd": 1389256,
+      "apy": 3.78417,
+      "apy_base": 3.78417,
       "apy_reward": null,
       "pool_meta": "0.01%"
     },
@@ -227,7 +227,7 @@
       "protocol": "morpho-v1",
       "chain": "Hyperliquid L1",
       "pool": "THBILL",
-      "tvl_usd": 1188148,
+      "tvl_usd": 1190815,
       "apy": 0,
       "apy_base": null,
       "apy_reward": null,
@@ -237,7 +237,7 @@
       "protocol": "morpho-v1",
       "chain": "Arbitrum",
       "pool": "PT-THBILL-19FEB2026",
-      "tvl_usd": 746053,
+      "tvl_usd": 609860,
       "apy": 0,
       "apy_base": null,
       "apy_reward": null,
@@ -257,9 +257,9 @@
       "protocol": "project-x",
       "chain": "Hyperliquid L1",
       "pool": "USDH-THBILL",
-      "tvl_usd": 40770,
-      "apy": 2.68156,
-      "apy_base": 2.68156,
+      "tvl_usd": 40761,
+      "apy": 2.75382,
+      "apy_base": 2.75382,
       "apy_reward": null,
       "pool_meta": "0.01%"
     },
@@ -267,9 +267,9 @@
       "protocol": "project-x",
       "chain": "Hyperliquid L1",
       "pool": "KHYPE-THBILL",
-      "tvl_usd": 27396,
-      "apy": 0.59037,
-      "apy_base": 0.59037,
+      "tvl_usd": 27280,
+      "apy": 0.70266,
+      "apy_base": 0.70266,
       "apy_reward": null,
       "pool_meta": "0.3%"
     },
@@ -277,9 +277,9 @@
       "protocol": "project-x",
       "chain": "Hyperliquid L1",
       "pool": "WHYPE-THBILL",
-      "tvl_usd": 25832,
-      "apy": 1.04921,
-      "apy_base": 1.04921,
+      "tvl_usd": 25699,
+      "apy": 1.24787,
+      "apy_base": 1.24787,
       "apy_reward": null,
       "pool_meta": "0.3%"
     }
