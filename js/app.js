@@ -60,18 +60,68 @@ function updateTVL(tvlData) {
 function updateBackingRatio(backing) {
     if (!backing) return;
 
-    const ratio = backing.backing_ratio_with_usdc;
     const elem = document.getElementById('backing-ratio');
-    elem.textContent = formatPercent(ratio * 100);
+    const noteElem = document.getElementById('backing-ratio-note');
+    elem.classList.remove('text-green-400', 'text-yellow-400', 'text-red-400', 'text-gray-400');
 
-    // Color based on ratio
-    if (ratio >= 0.95) {
-        elem.classList.add('text-green-400');
-    } else if (ratio >= 0.8) {
-        elem.classList.add('text-yellow-400');
+    const ratio = backing.usd_backing_ratio;
+    const priceSource = backing.tultra_usd_price_source || 'unavailable';
+
+    if (ratio !== null && ratio !== undefined) {
+        elem.textContent = formatPercent(ratio * 100);
+        if (ratio >= 0.98) elem.classList.add('text-green-400');
+        else if (ratio >= 0.90) elem.classList.add('text-yellow-400');
+        else elem.classList.add('text-red-400');
+        if (noteElem) noteElem.textContent = `tULTRA price from ${priceSource}`;
     } else {
-        elem.classList.add('text-red-400');
+        elem.textContent = 'indeterminate';
+        elem.classList.add('text-gray-400');
+        if (noteElem) {
+            noteElem.innerHTML = '<span class="inline-block px-2 py-0.5 rounded bg-yellow-900/40 text-yellow-300 border border-yellow-700/50">tULTRA USD price unavailable</span>';
+        }
     }
+}
+
+function updateUsdBackingSummary(backing) {
+    const container = document.getElementById('usd-backing-summary');
+    if (!container || !backing) return;
+
+    const nav = backing.thbill_nav_per_share;
+    const supply = backing.thbill_supply;
+    const liab = backing.usd_liabilities;
+    const assets = backing.usd_assets;
+    const ratio = backing.usd_backing_ratio;
+    const price = backing.tultra_usd_price;
+    const priceSource = backing.tultra_usd_price_source || 'unavailable';
+    const implied = backing.tultra_implied_price_from_vault;
+
+    const priceLine = price !== null && price !== undefined
+        ? `<span class="text-white">$${price.toFixed(6)}</span> <span class="text-gray-500">(source: ${priceSource})</span>`
+        : `<span class="text-yellow-300">unavailable</span> <span class="text-gray-500">(source: ${priceSource})</span>`;
+
+    const impliedLine = implied !== null && implied !== undefined
+        ? `<span class="italic text-gray-400">↳ implied from vault NAV: $${implied.toFixed(6)} — circular, not an independent check</span>`
+        : '';
+
+    const assetsLine = assets !== null && assets !== undefined
+        ? `$${formatNumber(assets, 0)}`
+        : '<span class="text-gray-500">— (needs tULTRA USD price)</span>';
+
+    const ratioLine = ratio !== null && ratio !== undefined
+        ? `<span class="text-white font-semibold">${formatPercent(ratio * 100)}</span>`
+        : '<span class="text-yellow-300 font-semibold">indeterminate</span>';
+
+    container.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1 text-gray-300">
+            <div>thBILL NAV: <span class="text-white">${nav ? '$' + nav.toFixed(6) : '-'}</span> <span class="text-gray-500">(USDC/share)</span></div>
+            <div>thBILL supply: <span class="text-white">${formatNumber(supply, 0)}</span></div>
+            <div>USD liabilities: <span class="text-white">${liab ? '$' + formatNumber(liab, 0) : '-'}</span></div>
+            <div>USD assets: ${assetsLine}</div>
+            <div class="md:col-span-2 mt-1">tULTRA USD price: ${priceLine}</div>
+            ${impliedLine ? `<div class="md:col-span-2">${impliedLine}</div>` : ''}
+            <div class="md:col-span-2 mt-1">USD backing ratio: ${ratioLine}</div>
+        </div>
+    `;
 }
 
 function updateNetFlow(flow) {
@@ -100,16 +150,19 @@ function updateBackingTable(backing) {
     const supply = backing.thbill_supply || 1;
     const hasTultra = backing.tultra_supply != null;
 
+    // Token-level accounting only. This table shows *token counts* and USDC
+    // balances — not USD-denominated backing. USD backing lives in the
+    // banner + USD summary panel above.
     const rows = [
         {
             asset: 'thBILL Supply',
             amount: supply,
+            unit: 'shares',
             pct: 100,
             isSupply: true
         }
     ];
 
-    // tULTRA: single line unless vault != supply
     if (hasTultra) {
         const vaultMatch = backing.tultra_vault_balance != null &&
             Math.abs(backing.tultra_vault_balance - backing.tultra_supply) < 0.01;
@@ -118,33 +171,35 @@ function updateBackingTable(backing) {
                 asset: 'tULTRA Supply',
                 note: '100% in vault',
                 amount: backing.tultra_supply,
+                unit: 'tULTRA',
                 pct: (backing.tultra_supply / supply) * 100
             });
         } else {
             rows.push({
                 asset: 'tULTRA in Vault',
                 amount: backing.tultra_vault_balance,
+                unit: 'tULTRA',
                 pct: (backing.tultra_vault_balance / supply) * 100,
                 isGap: true
             });
             rows.push({
                 asset: 'tULTRA Supply',
                 amount: backing.tultra_supply,
+                unit: 'tULTRA',
                 pct: (backing.tultra_supply / supply) * 100,
                 isGap: true
             });
         }
     }
 
-    // ULTRA total (T-bills)
     rows.push({
         asset: 'ULTRA Total',
-        note: 'T-bills',
+        note: 'T-bills across all chains',
         amount: backing.ultra_total,
+        unit: 'ULTRA',
         pct: (backing.ultra_total / supply) * 100
     });
 
-    // DeFi USDC positions (e.g. Aave)
     let defiUsdc = 0;
     if (backing.treasury_defi_positions) {
         for (const pos of backing.treasury_defi_positions) {
@@ -153,39 +208,28 @@ function updateBackingTable(backing) {
                 asset: `${pos.protocol} ${pos.token}`,
                 note: `Treasury supply on ${pos.protocol}`,
                 amount: pos.amount,
+                unit: 'USDC',
                 pct: (pos.amount / supply) * 100,
                 isCurrency: true
             });
         }
     }
 
-    // Spot USDC
     const spotUsdc = (backing.treasury_usdc || 0) - defiUsdc;
     if (spotUsdc > 0.01 || defiUsdc === 0) {
         rows.push({
             asset: 'USDC (spot)',
             note: 'Treasury wallet',
             amount: spotUsdc,
+            unit: 'USDC',
             pct: (spotUsdc / supply) * 100,
             isCurrency: true
         });
     }
 
-    // Total backing
-    const totalBacking = (backing.ultra_total || 0) + (backing.treasury_usdc || 0);
-    const backingPct = (totalBacking / supply) * 100;
-    rows.push({
-        asset: 'Total Backing',
-        amount: totalBacking,
-        pct: backingPct,
-        isTotal: true,
-        isCurrency: true
-    });
-
     const tbody = document.getElementById('backing-table');
     tbody.innerHTML = rows.map(row => {
         let rowClass = '';
-        if (row.isTotal) rowClass = 'bg-gray-900/50 font-medium border-t border-gray-600';
         if (row.isGap) rowClass = 'bg-yellow-900/20 text-yellow-400';
         if (row.isSupply) rowClass = 'bg-gray-900 font-bold border-b border-gray-700';
 
@@ -196,6 +240,7 @@ function updateBackingTable(backing) {
             <tr class="${rowClass}">
                 <td class="px-5 py-3">${row.asset}${noteSpan}</td>
                 <td class="text-right px-5 py-3">${amount}</td>
+                <td class="text-right px-5 py-3 text-gray-400 text-xs">${row.unit || ''}</td>
                 <td class="text-right px-5 py-3">${formatPercent(row.pct)}</td>
             </tr>
         `;
@@ -763,6 +808,7 @@ async function fetchAndUpdate() {
         updateTVL(data.tvl_usd);
         updateBackingRatio(data.backing);
         updateNetFlow(data.redemption_flow);
+        updateUsdBackingSummary(data.backing);
         updateBackingTable(data.backing);
         updateTreasuryTable(data.backing);
         updatePegStatus(data.peg);

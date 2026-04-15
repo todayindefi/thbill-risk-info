@@ -96,11 +96,11 @@
                     <div class="text-2xl font-bold text-white" id="tvl-total">-</div>
                     <div class="text-xs text-gray-500 mt-2" id="tvl-breakdown"></div>
                 </div>
-                <!-- Backing Ratio -->
+                <!-- Backing Ratio (USD-denominated) -->
                 <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
-                    <div class="text-sm text-gray-400 mb-1">On-Chain Backing Ratio</div>
+                    <div class="text-sm text-gray-400 mb-1">USD Backing Ratio</div>
                     <div class="text-2xl font-bold" id="backing-ratio">-</div>
-                    <div class="text-xs text-gray-500 mt-2">(ULTRA + USDC) / thBILL supply</div>
+                    <div class="text-xs text-gray-500 mt-2" id="backing-ratio-note">(ULTRA × tULTRA_USD) / (thBILL × NAV)</div>
                 </div>
                 <!-- 24h Flow -->
                 <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
@@ -118,22 +118,30 @@
                 <div class="p-5">
                     <p class="text-gray-300 text-sm mb-4">
                         thBILL → tULTRA (Theo's wrapper) → ULTRA (Libeara T-bills) + cash reserves.
-                        The tULTRA layer reveals implied cash backing (tULTRA supply minus ULTRA supply)
-                        which can be compared against Theo's self-reported cash reserves.
+                        The USD backing ratio prices ULTRA at an independently-sourced tULTRA USD rate
+                        and compares it against thBILL liabilities (supply × on-chain NAV).
                     </p>
+                    <div id="usd-backing-summary" class="mb-4 text-sm">
+                        <!-- populated by app.js -->
+                    </div>
                 </div>
                 <table class="w-full text-sm">
                     <thead class="bg-gray-900">
                         <tr>
                             <th class="text-left px-5 py-3 text-gray-400 font-medium">Asset</th>
                             <th class="text-right px-5 py-3 text-gray-400 font-medium">Amount</th>
-                            <th class="text-right px-5 py-3 text-gray-400 font-medium">% of Supply</th>
+                            <th class="text-right px-5 py-3 text-gray-400 font-medium">Unit</th>
+                            <th class="text-right px-5 py-3 text-gray-400 font-medium">% of thBILL supply</th>
                         </tr>
                     </thead>
                     <tbody id="backing-table">
-                        <tr><td colspan="3" class="px-5 py-3 text-gray-500">Loading...</td></tr>
+                        <tr><td colspan="4" class="px-5 py-3 text-gray-500">Loading...</td></tr>
                     </tbody>
                 </table>
+                <div class="px-5 py-3 text-xs text-gray-500 border-t border-gray-700">
+                    % column is tokens-per-thBILL-share, not USD backing. See USD backing ratio above
+                    for dollar-denominated coverage.
+                </div>
             </div>
         </section>
 
