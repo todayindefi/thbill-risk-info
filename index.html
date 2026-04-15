@@ -44,12 +44,16 @@
             <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
                 <h2 class="text-xl font-semibold mb-4 text-white">Executive Summary</h2>
                 <p class="text-gray-300 leading-relaxed">
-                    thBILL is a tokenized US Treasury bill product issued by Theo Network, with ~$129M in TVL
+                    thBILL is a tokenized US Treasury bill product issued by Theo Network, with ~$135M in TVL
                     across Ethereum, Arbitrum, and Solana. It provides on-chain T-bill exposure through Libeara's
-                    ULTRA token, wrapped in Theo's tULTRA. Backing is ~100% on-chain verifiable: ~77% in ULTRA
-                    (short-duration T-bills) and ~23% in Treasury USDC supplied to Aave V3 on Ethereum. Key risks
-                    include centralization — minting, redemption, and treasury management are controlled by Theo,
-                    with an additional dependency on Libeara as the underlying issuer.
+                    ULTRA token, wrapped in Theo's tULTRA. <strong>Token custody is fully on-chain verifiable</strong>
+                    — thBILL shares, tULTRA wrapper balance, and Treasury positions are all readable from contracts.
+                    <strong>USD-denominated backing is not currently independently verifiable</strong>: tULTRA has no
+                    public price feed, so the backing ratio is indeterminate pending a CoinGecko listing or
+                    Libeara-published NAV. The vault reports NAV of $1.023/share and the wrapper chain (thBILL →
+                    tULTRA → Libeara ULTRA → T-Bills) is intact, but third-party USD valuation of tULTRA is the open
+                    item. Key risks include centralization — minting, redemption, and treasury management are
+                    controlled by Theo, with an additional dependency on Libeara as the underlying issuer.
                 </p>
             </div>
         </section>
@@ -81,7 +85,7 @@
                 <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 text-center">
                     <div class="text-2xl mb-2" title="5/5 stars">★★★★★</div>
                     <div class="text-sm font-medium text-white">Transparency</div>
-                    <div class="text-xs text-gray-400 mt-1">100% on-chain verified</div>
+                    <div class="text-xs text-gray-400 mt-1">Custody verified; USD backing pending price feed</div>
                 </div>
             </div>
         </section>
