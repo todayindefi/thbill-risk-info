@@ -38,7 +38,18 @@
         </div>
     </header>
 
+    <!-- Tab Navigation -->
+    <nav class="bg-theo-dark border-b border-gray-800 sticky top-0 z-10">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex">
+                <button data-tab="risk" class="tab-btn px-4 py-3 text-sm font-medium border-b-2 border-theo-blue text-white transition">Risk Assessment</button>
+                <button data-tab="defi" class="tab-btn px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white transition">DeFi Integrations</button>
+            </div>
+        </div>
+    </nav>
+
     <main class="max-w-6xl mx-auto px-4 py-8">
+        <div id="tab-risk" class="tab-panel">
         <!-- Executive Summary -->
         <section class="mb-8">
             <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
@@ -256,9 +267,72 @@
             </div>
         </section>
 
+        <!-- Risk Sections -->
+        <section class="mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-white">Risk Analysis</h2>
+            <div class="space-y-4">
+                <!-- Issuer Risk -->
+                <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
+                    <h3 class="font-semibold text-white mb-2">Issuer Risk</h3>
+                    <p class="text-gray-300 text-sm">
+                        Theo Network is the issuer of thBILL. The protocol is relatively new and operates with
+                        centralized control over minting and redemption. Users must trust Theo to maintain
+                        proper backing and honor redemptions. There is no on-chain governance mechanism.
+                    </p>
+                </div>
+
+                <!-- Decentralization -->
+                <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
+                    <h3 class="font-semibold text-white mb-2">Decentralization</h3>
+                    <p class="text-gray-300 text-sm">
+                        thBILL is highly centralized. Key functions (minting, redemption, treasury management)
+                        are controlled by Theo. The underlying ULTRA tokens are issued by Libeara, adding
+                        another centralized dependency. Smart contracts are upgradeable.
+                    </p>
+                </div>
+
+                <!-- Technical Risk -->
+                <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
+                    <h3 class="font-semibold text-white mb-2">Technical Risk</h3>
+                    <p class="text-gray-300 text-sm">
+                        The thBILL vault follows the ERC-4626 standard. Contracts are deployed on Ethereum
+                        and Arbitrum. The protocol uses standard patterns but contracts are upgradeable,
+                        which introduces admin key risks. Multi-chain deployment adds bridge risk.
+                    </p>
+                </div>
+
+                <!-- Minting & Redemption -->
+                <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
+                    <h3 class="font-semibold text-white mb-2">Minting & Redemption</h3>
+                    <p class="text-gray-300 text-sm">
+                        Minting and redemption are processed through Theo's system, not permissionlessly on-chain.
+                        There may be delays during high-volume periods. Minimum redemption amounts may apply.
+                        The process involves KYC for large amounts.
+                    </p>
+                </div>
+
+                <!-- Operational Risk -->
+                <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
+                    <h3 class="font-semibold text-white mb-2">Operational Risk</h3>
+                    <p class="text-gray-300 text-sm">
+                        Standard RWA operational risks apply: custodian failure, regulatory action, banking
+                        issues, oracle failures. The ~21% cash portion ($37M) is Treasury USDC supplied to
+                        Aave V3 on Ethereum — verifiable on-chain. Combined with ULTRA holdings across
+                        ETH/ARB/Solana, on-chain backing ratio is ~100%.
+                    </p>
+                </div>
+            </div>
+        </section>
+        </div><!-- /tab-risk -->
+
+        <div id="tab-defi" class="tab-panel hidden">
         <!-- DeFi Integrations -->
         <section class="mb-8">
-            <h2 class="text-xl font-semibold mb-4 text-white">DeFi Integrations</h2>
+            <h2 class="text-xl font-semibold mb-2 text-white">DeFi Integrations</h2>
+            <p class="text-gray-400 text-sm mb-4">
+                Where thBILL is currently deployable across DeFi. This is an opportunity list, not a risk
+                signal — integration breadth reflects partnership traction, not collateral quality.
+            </p>
 
             <!-- Money Markets -->
             <div class="mb-4">
@@ -323,63 +397,7 @@
                 </div>
             </div>
         </section>
-
-        <!-- Risk Sections -->
-        <section class="mb-8">
-            <h2 class="text-xl font-semibold mb-4 text-white">Risk Analysis</h2>
-            <div class="space-y-4">
-                <!-- Issuer Risk -->
-                <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
-                    <h3 class="font-semibold text-white mb-2">Issuer Risk</h3>
-                    <p class="text-gray-300 text-sm">
-                        Theo Network is the issuer of thBILL. The protocol is relatively new and operates with
-                        centralized control over minting and redemption. Users must trust Theo to maintain
-                        proper backing and honor redemptions. There is no on-chain governance mechanism.
-                    </p>
-                </div>
-
-                <!-- Decentralization -->
-                <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
-                    <h3 class="font-semibold text-white mb-2">Decentralization</h3>
-                    <p class="text-gray-300 text-sm">
-                        thBILL is highly centralized. Key functions (minting, redemption, treasury management)
-                        are controlled by Theo. The underlying ULTRA tokens are issued by Libeara, adding
-                        another centralized dependency. Smart contracts are upgradeable.
-                    </p>
-                </div>
-
-                <!-- Technical Risk -->
-                <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
-                    <h3 class="font-semibold text-white mb-2">Technical Risk</h3>
-                    <p class="text-gray-300 text-sm">
-                        The thBILL vault follows the ERC-4626 standard. Contracts are deployed on Ethereum
-                        and Arbitrum. The protocol uses standard patterns but contracts are upgradeable,
-                        which introduces admin key risks. Multi-chain deployment adds bridge risk.
-                    </p>
-                </div>
-
-                <!-- Minting & Redemption -->
-                <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
-                    <h3 class="font-semibold text-white mb-2">Minting & Redemption</h3>
-                    <p class="text-gray-300 text-sm">
-                        Minting and redemption are processed through Theo's system, not permissionlessly on-chain.
-                        There may be delays during high-volume periods. Minimum redemption amounts may apply.
-                        The process involves KYC for large amounts.
-                    </p>
-                </div>
-
-                <!-- Operational Risk -->
-                <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
-                    <h3 class="font-semibold text-white mb-2">Operational Risk</h3>
-                    <p class="text-gray-300 text-sm">
-                        Standard RWA operational risks apply: custodian failure, regulatory action, banking
-                        issues, oracle failures. The ~21% cash portion ($37M) is Treasury USDC supplied to
-                        Aave V3 on Ethereum — verifiable on-chain. Combined with ULTRA holdings across
-                        ETH/ARB/Solana, on-chain backing ratio is ~100%.
-                    </p>
-                </div>
-            </div>
-        </section>
+        </div><!-- /tab-defi -->
 
         <!-- Disclaimer -->
         <section class="mb-8">
@@ -406,6 +424,39 @@
         </div>
     </footer>
 
+    <script>
+        (function() {
+            const tabs = document.querySelectorAll('.tab-btn');
+            const panels = document.querySelectorAll('.tab-panel');
+
+            function activate(name) {
+                tabs.forEach(t => {
+                    const active = t.dataset.tab === name;
+                    t.classList.toggle('border-theo-blue', active);
+                    t.classList.toggle('text-white', active);
+                    t.classList.toggle('border-transparent', !active);
+                    t.classList.toggle('text-gray-400', !active);
+                });
+                panels.forEach(p => {
+                    p.classList.toggle('hidden', p.id !== 'tab-' + name);
+                });
+            }
+
+            tabs.forEach(t => {
+                t.addEventListener('click', () => {
+                    const name = t.dataset.tab;
+                    activate(name);
+                    const url = new URL(window.location);
+                    if (name === 'risk') url.searchParams.delete('tab');
+                    else url.searchParams.set('tab', name);
+                    history.replaceState(null, '', url);
+                });
+            });
+
+            const initial = new URLSearchParams(window.location.search).get('tab') === 'defi' ? 'defi' : 'risk';
+            activate(initial);
+        })();
+    </script>
     <script src="js/app.js"></script>
 </body>
 </html>
