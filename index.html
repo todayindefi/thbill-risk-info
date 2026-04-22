@@ -201,6 +201,50 @@
             </div>
         </section>
 
+        <!-- Redemption Mechanics -->
+        <section class="mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-white">Redemption Mechanics</h2>
+            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700 text-sm text-gray-300 leading-relaxed space-y-3">
+                <p>
+                    Two exit paths exist for thBILL holders. The choice determines whether
+                    you capture NAV or absorb the peg discount.
+                </p>
+                <div class="border-l-2 border-gray-600 pl-4">
+                    <div class="font-semibold text-white mb-1">Primary redemption (NAV, gated)</div>
+                    <p>
+                        thBILL → tULTRA → ULTRA → USDC. All three conversion layers charge
+                        <span class="text-white font-semibold">0% in fees</span>. Gates:
+                        KYC with Theo <em>and</em> with Libeara/FundBridge,
+                        <span class="text-white font-semibold">≥$50K minimum</span> at the Libeara
+                        redemption layer (<span class="text-white font-semibold">≥$200K</span>
+                        for new unitholders per the fund's offering memorandum), and
+                        <span class="text-white font-semibold">T+4 business day</span> settlement
+                        before USDC arrives. Theo's on-chain <code class="text-gray-400">redeem()</code>
+                        function is permissionless but returns tULTRA (no secondary market) —
+                        the off-chain path is what actually produces USDC.
+                    </p>
+                </div>
+                <div class="border-l-2 border-gray-600 pl-4">
+                    <div class="font-semibold text-white mb-1">Secondary sale (DEX, instant)</div>
+                    <p>
+                        Sell thBILL into a Uniswap / Project X / Pancake pool for USDC-equivalent,
+                        typically at a discount to NAV. Current secondary exit cost is the
+                        headline "Premium / Discount" figure below
+                        <span class="text-gray-500">(~0.6% at last snapshot)</span>. No KYC, no
+                        minimum, any size — but depth is thin
+                        <span class="text-gray-500">(2% sell depth on the largest pool is ~$211K)</span>,
+                        so larger sells incur additional slippage.
+                    </p>
+                </div>
+                <p class="text-xs text-gray-500 pt-1">
+                    The peg discount is effectively the liquidity-access premium — the cost a
+                    holder pays for instant permissionless exit vs the KYC-and-wait primary path.
+                    It can drift whenever the eligible-for-primary-redemption set chooses not to
+                    arbitrage it (see "Days Since Last Redemption" in Live Metrics).
+                </p>
+            </div>
+        </section>
+
         <!-- Peg Performance -->
         <section class="mb-8">
             <h2 class="text-xl font-semibold mb-4 text-white">Peg Performance</h2>
