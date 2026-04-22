@@ -180,6 +180,35 @@ function updateNetFlow(flow) {
         elem.classList.add('text-gray-400');
         noteElem.textContent = flow.note || '';
     }
+
+    // Days since last redemption — peg-mechanism health signal. thBILL's peg
+    // is maintained by redemption arb; if no one's redeeming, the discount
+    // can drift without correction.
+    const daysElem = document.getElementById('days-since-redemption');
+    const daysNoteElem = document.getElementById('days-since-redemption-note');
+    if (daysElem && flow.days_since_last_redemption !== undefined && flow.days_since_last_redemption !== null) {
+        const days = flow.days_since_last_redemption;
+        const hasExact = flow.last_redemption_timestamp !== null && flow.last_redemption_timestamp !== undefined;
+        daysElem.textContent = (hasExact ? '' : '≥') + days.toFixed(1) + 'd';
+        daysElem.classList.remove('text-green-400', 'text-yellow-400', 'text-red-400', 'text-gray-400');
+        if (days < 7) daysElem.classList.add('text-green-400');
+        else if (days < 30) daysElem.classList.add('text-yellow-400');
+        else daysElem.classList.add('text-red-400');
+
+        if (daysNoteElem) {
+            if (hasExact) {
+                const amt = flow.last_redemption_amount_thbill;
+                const ts = flow.last_redemption_timestamp ? flow.last_redemption_timestamp.slice(0, 10) : '?';
+                const txShort = flow.last_redemption_tx ? flow.last_redemption_tx.slice(0, 10) + '…' : '';
+                const txLink = flow.last_redemption_tx
+                    ? ` <a href="https://etherscan.io/tx/${flow.last_redemption_tx}" target="_blank" class="text-blue-400 hover:underline">${txShort}</a>`
+                    : '';
+                daysNoteElem.innerHTML = `last: ${formatNumber(amt, 0)} thBILL on ${ts}${txLink}`;
+            } else {
+                daysNoteElem.innerHTML = '<span class="text-yellow-300">No burns in ~35d scan window</span> <span class="text-gray-500">— peg arb inactive</span>';
+            }
+        }
+    }
 }
 
 function updateBackingTable(backing) {
