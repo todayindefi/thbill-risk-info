@@ -1,17 +1,5 @@
 [
   {
-    "timestamp": "2026-04-15T08:42:30.615896Z",
-    "nav_per_share": 1.023211,
-    "vwap": 1.020542,
-    "premium_discount_pct": -0.2608
-  },
-  {
-    "timestamp": "2026-04-15T09:20:02.043778Z",
-    "nav_per_share": 1.023211,
-    "vwap": 1.020414,
-    "premium_discount_pct": -0.2734
-  },
-  {
     "timestamp": "2026-04-15T10:20:01.604669Z",
     "nav_per_share": 1.023211,
     "vwap": 1.020544,
@@ -1006,5 +994,17 @@
     "nav_per_share": 1.023802,
     "vwap": 1.017325,
     "premium_discount_pct": -0.6326
+  },
+  {
+    "timestamp": "2026-04-22T03:40:32.492619Z",
+    "nav_per_share": 1.023802,
+    "vwap": 1.017294,
+    "premium_discount_pct": -0.6357
+  },
+  {
+    "timestamp": "2026-04-22T04:20:02.285718Z",
+    "nav_per_share": 1.023802,
+    "vwap": 1.01734,
+    "premium_discount_pct": -0.6312
   }
 ]
