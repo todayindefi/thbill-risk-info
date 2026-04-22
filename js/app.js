@@ -66,13 +66,21 @@ function updateBackingRatio(backing) {
 
     const ratio = backing.usd_backing_ratio;
     const priceSource = backing.tultra_usd_price_source || 'unavailable';
+    const isCircular = priceSource === 'vault_implied_circular';
 
     if (ratio !== null && ratio !== undefined) {
         elem.textContent = formatPercent(ratio * 100);
-        if (ratio >= 0.98) elem.classList.add('text-green-400');
+        if (isCircular) {
+            // Theo-reported, not independently verified — always warn, regardless of value
+            elem.classList.add('text-yellow-400');
+        } else if (ratio >= 0.98) elem.classList.add('text-green-400');
         else if (ratio >= 0.90) elem.classList.add('text-yellow-400');
         else elem.classList.add('text-red-400');
-        if (noteElem) noteElem.textContent = `tULTRA price from ${priceSource}`;
+        if (noteElem) {
+            noteElem.innerHTML = isCircular
+                ? '<span class="text-yellow-300">Theo-reported (circular)</span> <span class="text-gray-500">— tULTRA priced at vault-implied NAV, not independently verified</span>'
+                : `tULTRA price from ${priceSource}`;
+        }
     } else {
         elem.textContent = 'indeterminate';
         elem.classList.add('text-gray-400');
@@ -95,11 +103,17 @@ function updateUsdBackingSummary(backing) {
     const priceSource = backing.tultra_usd_price_source || 'unavailable';
     const implied = backing.tultra_implied_price_from_vault;
 
+    const isCircular = priceSource === 'vault_implied_circular';
+    const sourceLabel = isCircular
+        ? '<span class="text-yellow-300">Theo-reported (vault-implied, circular)</span>'
+        : `<span class="text-gray-500">(source: ${priceSource})</span>`;
+
     const priceLine = price !== null && price !== undefined
-        ? `<span class="text-white">$${price.toFixed(6)}</span> <span class="text-gray-500">(source: ${priceSource})</span>`
+        ? `<span class="${isCircular ? 'text-yellow-300' : 'text-white'}">$${price.toFixed(6)}</span> ${sourceLabel}`
         : `<span class="text-yellow-300">unavailable</span> <span class="text-gray-500">(source: ${priceSource})</span>`;
 
-    const impliedLine = implied !== null && implied !== undefined
+    // Suppress the standalone implied line when it IS the active price (would duplicate).
+    const impliedLine = (implied !== null && implied !== undefined && !isCircular)
         ? `<span class="italic text-gray-400">↳ implied from vault NAV: $${implied.toFixed(6)} — circular, not an independent check</span>`
         : '';
 
@@ -108,7 +122,7 @@ function updateUsdBackingSummary(backing) {
         : '<span class="text-gray-500">— (needs tULTRA USD price)</span>';
 
     const ratioLine = ratio !== null && ratio !== undefined
-        ? `<span class="text-white font-semibold">${formatPercent(ratio * 100)}</span>`
+        ? `<span class="${isCircular ? 'text-yellow-300' : 'text-white'} font-semibold">${formatPercent(ratio * 100)}</span>${isCircular ? ' <span class="text-gray-500 text-xs">(Theo-reported, not independently verified)</span>' : ''}`
         : '<span class="text-yellow-300 font-semibold">indeterminate</span>';
 
     container.innerHTML = `
