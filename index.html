@@ -54,20 +54,25 @@
         <section class="mb-8">
             <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
                 <h2 class="text-xl font-semibold mb-4 text-white">Executive Summary</h2>
-                <p class="text-gray-300 leading-relaxed">
-                    thBILL is a tokenized US Treasury bill product issued by Theo Network, with ~$135M in TVL
-                    across Ethereum, Arbitrum, Avalanche, and Solana. It provides on-chain T-bill exposure through
-                    Libeara's ULTRA token, wrapped in Theo's tULTRA. <strong>Token custody and USD backing are
-                    fully on-chain verifiable.</strong> Libeara writes the daily ULTRA NAV directly to the
-                    UltraManager contract (cryptographically signed by Libeara's admin key, 6-decimal precision,
-                    per-epoch), and all Theo positions — thBILL shares, tULTRA wrapper, treasury ULTRA and USDC
-                    — are readable from chain state. We price tULTRA at Libeara's attested NAV × the tULTRA
-                    wrapper rate, and expose the drift between this and Theo's vault-implied NAV as a
-                    Theo-accounting lag signal. Key risks remain centralization — minting, redemption, and
-                    treasury management are Theo-controlled — with a layered dependency on Libeara as the
-                    underlying fund administrator. No independent auditor or custodian attestation reports are
-                    publicly published; the on-chain NAV write is the authoritative transparency mechanism.
+                <p class="text-gray-300 leading-relaxed mb-4">
+                    <strong>thBILL</strong> is Theo Network's tokenized US Treasury bill exposure — roughly
+                    $135M in TVL across Ethereum, Arbitrum, and Solana. Each share represents Libeara's
+                    ULTRA T-bill token held in Theo's treasury, wrapped via tULTRA.
                 </p>
+                <ul class="text-gray-300 leading-relaxed space-y-2 list-disc pl-5">
+                    <li>
+                        <strong>Backing is on-chain verifiable.</strong> Libeara posts the daily ULTRA NAV
+                        to a public contract, and Theo's treasury holdings (ULTRA + USDC) are readable from
+                        chain state. The USD backing ratio, NAV, and any drift against Theo's reported NAV
+                        are shown below.
+                    </li>
+                    <li>
+                        <strong>Main risk is centralization.</strong> Minting, redemption, and treasury
+                        management are Theo-controlled, with Libeara as the underlying fund administrator.
+                        No independent auditor or custodian attestations are published — the on-chain NAV
+                        write is the primary transparency mechanism.
+                    </li>
+                </ul>
             </div>
         </section>
 
@@ -117,11 +122,11 @@
                 <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
                     <div class="text-sm text-gray-400 mb-1">USD Backing Ratio</div>
                     <div class="text-2xl font-bold" id="backing-ratio">-</div>
-                    <div class="text-xs text-gray-500 mt-2" id="backing-ratio-note">(Treasury ULTRA × Libeara NAV + USDC) / (thBILL × NAV)</div>
+                    <div class="text-xs text-gray-500 mt-2" id="backing-ratio-note">Treasury assets (ULTRA + USDC) ÷ thBILL in circulation</div>
                 </div>
-                <!-- 24h Flow -->
+                <!-- 7d Flow -->
                 <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
-                    <div class="text-sm text-gray-400 mb-1">24h Net Flow</div>
+                    <div class="text-sm text-gray-400 mb-1">7d Net Flow</div>
                     <div class="text-2xl font-bold" id="net-flow">-</div>
                     <div class="text-xs text-gray-500 mt-2" id="flow-note"></div>
                 </div>

@@ -6,6 +6,7 @@
 // Configuration
 const METRICS_URL = 'data/thbill_metrics.json';
 const PEG_HISTORY_URL = 'data/thbill_peg_history.json';
+const SUPPLY_HISTORY_URL = 'data/thbill_history.json';
 
 // Utility functions
 function formatNumber(num, decimals = 0) {
@@ -82,7 +83,7 @@ function updateBackingRatio(backing) {
             if (isCircular) {
                 noteElem.innerHTML = '<span class="text-yellow-300">Theo-reported (circular)</span> <span class="text-gray-500">— tULTRA priced at vault-implied NAV, not independently verified</span>';
             } else if (isOnchain) {
-                noteElem.innerHTML = `<span class="text-green-300">Libeara-attested on-chain</span> <span class="text-gray-500">— UltraManager.lastSetMintExchangeRate()${epoch ? ', epoch ' + epoch : ''}</span>`;
+                noteElem.innerHTML = `<span class="text-green-300">Libeara on-chain NAV</span> <span class="text-gray-500">— daily T-bill NAV published by Libeara${epoch ? ' (epoch ' + epoch + ')' : ''}</span>`;
             } else {
                 noteElem.innerHTML = `tULTRA price from ${priceSource}`;
             }
@@ -162,19 +163,53 @@ function updateUsdBackingSummary(backing) {
     `;
 }
 
-function updateNetFlow(flow) {
+function updateNetFlow(flow, supplyHistory, currentSupply) {
     if (!flow) return;
 
     const elem = document.getElementById('net-flow');
     const noteElem = document.getElementById('flow-note');
 
-    if (flow.net_flow_24h !== null) {
-        const net = flow.net_flow_24h;
-        const pct = flow.net_flow_percentage || 0;
-        const direction = net >= 0 ? '+' : '';
-        elem.textContent = direction + formatNumber(net, 0) + ' thBILL';
-        elem.classList.add(net >= 0 ? 'text-green-400' : 'text-red-400');
-        noteElem.textContent = `${direction}${formatPercent(pct, 4)} change`;
+    // Compute 7d net flow from supply history. History is a sorted array of
+    // { timestamp, thbill_supply } hourly snapshots. We pick the entry closest
+    // to (now - 7d); if history is too short, fall back to the oldest entry
+    // and label the window accordingly.
+    let net7d = null;
+    let pct7d = null;
+    let windowDays = 7;
+    let insufficient = false;
+
+    if (Array.isArray(supplyHistory) && supplyHistory.length > 0 && currentSupply != null) {
+        const nowMs = Date.now();
+        const targetMs = nowMs - 7 * 24 * 60 * 60 * 1000;
+        let closest = supplyHistory[0];
+        let closestDelta = Math.abs(new Date(
+            closest.timestamp.endsWith('Z') ? closest.timestamp : closest.timestamp + 'Z'
+        ).getTime() - targetMs);
+        for (const entry of supplyHistory) {
+            const ts = entry.timestamp.endsWith('Z') ? entry.timestamp : entry.timestamp + 'Z';
+            const delta = Math.abs(new Date(ts).getTime() - targetMs);
+            if (delta < closestDelta) {
+                closest = entry;
+                closestDelta = delta;
+            }
+        }
+        const oldTs = closest.timestamp.endsWith('Z') ? closest.timestamp : closest.timestamp + 'Z';
+        const actualWindowMs = nowMs - new Date(oldTs).getTime();
+        windowDays = actualWindowMs / (24 * 60 * 60 * 1000);
+        insufficient = windowDays < 6.5; // history doesn't span a full week yet
+        net7d = currentSupply - closest.thbill_supply;
+        pct7d = closest.thbill_supply ? (net7d / closest.thbill_supply) * 100 : 0;
+    }
+
+    if (net7d !== null) {
+        const direction = net7d >= 0 ? '+' : '';
+        elem.textContent = direction + formatNumber(net7d, 0) + ' thBILL';
+        elem.classList.add(net7d >= 0 ? 'text-green-400' : 'text-red-400');
+        if (insufficient) {
+            noteElem.textContent = `${direction}${formatPercent(pct7d, 4)} over ${windowDays.toFixed(1)}d (history < 7d)`;
+        } else {
+            noteElem.textContent = `${direction}${formatPercent(pct7d, 4)} change`;
+        }
     } else {
         elem.textContent = 'Calculating...';
         elem.classList.add('text-gray-400');
@@ -885,7 +920,6 @@ async function fetchAndUpdate() {
         updateLastUpdated(data.timestamp);
         updateTVL(data.tvl_usd);
         updateBackingRatio(data.backing);
-        updateNetFlow(data.redemption_flow);
         updateUsdBackingSummary(data.backing);
         updateBackingTable(data.backing);
         updateTreasuryTable(data.backing);
@@ -896,6 +930,14 @@ async function fetchAndUpdate() {
             const histResp = await fetch(PEG_HISTORY_URL);
             if (histResp.ok) pegHistory = await histResp.json();
         } catch (e) { /* use empty array fallback */ }
+
+        let supplyHistory = [];
+        try {
+            const supplyResp = await fetch(SUPPLY_HISTORY_URL);
+            if (supplyResp.ok) supplyHistory = await supplyResp.json();
+        } catch (e) { /* use empty array fallback */ }
+
+        updateNetFlow(data.redemption_flow, supplyHistory, data.backing ? data.backing.thbill_supply : null);
 
         renderPegChart(pegHistory);
         updateLiquidityTable(data.secondary_liquidity);
