@@ -67,6 +67,8 @@ function updateBackingRatio(backing) {
     const ratio = backing.usd_backing_ratio;
     const priceSource = backing.tultra_usd_price_source || 'unavailable';
     const isCircular = priceSource === 'vault_implied_circular';
+    const isOnchain = priceSource === 'onchain_ultramanager';
+    const epoch = backing.ultra_onchain_nav_epoch;
 
     if (ratio !== null && ratio !== undefined) {
         elem.textContent = formatPercent(ratio * 100);
@@ -77,9 +79,13 @@ function updateBackingRatio(backing) {
         else if (ratio >= 0.90) elem.classList.add('text-yellow-400');
         else elem.classList.add('text-red-400');
         if (noteElem) {
-            noteElem.innerHTML = isCircular
-                ? '<span class="text-yellow-300">Theo-reported (circular)</span> <span class="text-gray-500">— tULTRA priced at vault-implied NAV, not independently verified</span>'
-                : `tULTRA price from ${priceSource}`;
+            if (isCircular) {
+                noteElem.innerHTML = '<span class="text-yellow-300">Theo-reported (circular)</span> <span class="text-gray-500">— tULTRA priced at vault-implied NAV, not independently verified</span>';
+            } else if (isOnchain) {
+                noteElem.innerHTML = `<span class="text-green-300">Libeara-attested on-chain</span> <span class="text-gray-500">— UltraManager.lastSetMintExchangeRate()${epoch ? ', epoch ' + epoch : ''}</span>`;
+            } else {
+                noteElem.innerHTML = `tULTRA price from ${priceSource}`;
+            }
         }
     } else {
         elem.textContent = 'indeterminate';
@@ -102,20 +108,38 @@ function updateUsdBackingSummary(backing) {
     const price = backing.tultra_usd_price;
     const priceSource = backing.tultra_usd_price_source || 'unavailable';
     const implied = backing.tultra_implied_price_from_vault;
+    const onchainNav = backing.ultra_onchain_nav;
+    const onchainEpoch = backing.ultra_onchain_nav_epoch;
+    const drift = backing.theo_nav_drift_pct;
 
     const isCircular = priceSource === 'vault_implied_circular';
-    const sourceLabel = isCircular
-        ? '<span class="text-yellow-300">Theo-reported (vault-implied, circular)</span>'
-        : `<span class="text-gray-500">(source: ${priceSource})</span>`;
+    const isOnchain = priceSource === 'onchain_ultramanager';
 
+    let sourceLabel;
+    if (isCircular) {
+        sourceLabel = '<span class="text-yellow-300">Theo-reported (vault-implied, circular)</span>';
+    } else if (isOnchain) {
+        sourceLabel = `<span class="text-green-300">Libeara on-chain, epoch ${onchainEpoch}</span>`;
+    } else {
+        sourceLabel = `<span class="text-gray-500">(source: ${priceSource})</span>`;
+    }
+
+    const priceColor = isCircular ? 'text-yellow-300' : (isOnchain ? 'text-green-300' : 'text-white');
     const priceLine = price !== null && price !== undefined
-        ? `<span class="${isCircular ? 'text-yellow-300' : 'text-white'}">$${price.toFixed(6)}</span> ${sourceLabel}`
+        ? `<span class="${priceColor}">$${price.toFixed(6)}</span> ${sourceLabel}`
         : `<span class="text-yellow-300">unavailable</span> <span class="text-gray-500">(source: ${priceSource})</span>`;
 
-    // Suppress the standalone implied line when it IS the active price (would duplicate).
-    const impliedLine = (implied !== null && implied !== undefined && !isCircular)
-        ? `<span class="italic text-gray-400">↳ implied from vault NAV: $${implied.toFixed(6)} — circular, not an independent check</span>`
-        : '';
+    // On-chain NAV is attested by Libeara; show the drift between it and Theo's vault-implied price
+    // as a lag/accuracy signal when both are available.
+    let navDetailLine = '';
+    if (isOnchain && onchainNav !== null && onchainNav !== undefined) {
+        const driftTxt = (drift !== null && drift !== undefined)
+            ? ` <span class="text-xs ${Math.abs(drift) > 0.5 ? 'text-yellow-300' : 'text-gray-500'}">(Theo vault-implied $${implied?.toFixed(6) ?? '-'} → ${drift >= 0 ? '+' : ''}${drift.toFixed(3)}% drift)</span>`
+            : '';
+        navDetailLine = `<div class="md:col-span-2"><span class="italic text-gray-400">↳ ULTRA NAV (UltraManager.lastSetMintExchangeRate, epoch ${onchainEpoch}): $${onchainNav.toFixed(6)}</span>${driftTxt}</div>`;
+    } else if (implied !== null && implied !== undefined && !isCircular) {
+        navDetailLine = `<div class="md:col-span-2"><span class="italic text-gray-400">↳ implied from vault NAV: $${implied.toFixed(6)} — circular, not an independent check</span></div>`;
+    }
 
     const assetsLine = assets !== null && assets !== undefined
         ? `$${formatNumber(assets, 0)}`
@@ -132,7 +156,7 @@ function updateUsdBackingSummary(backing) {
             <div>USD liabilities: <span class="text-white">${liab ? '$' + formatNumber(liab, 0) : '-'}</span></div>
             <div>USD assets: ${assetsLine}</div>
             <div class="md:col-span-2 mt-1">tULTRA USD price: ${priceLine}</div>
-            ${impliedLine ? `<div class="md:col-span-2">${impliedLine}</div>` : ''}
+            ${navDetailLine}
             <div class="md:col-span-2 mt-1">USD backing ratio: ${ratioLine}</div>
         </div>
     `;
@@ -278,6 +302,13 @@ function updateTreasuryTable(backing) {
             coverage: backing.ultra_arbitrum ? (backing.treasury_ultra_arbitrum / backing.ultra_arbitrum) * 100 : 0
         },
         {
+            chain: 'Avalanche',
+            treasury: backing.treasury_ultra_avalanche,
+            supply: backing.ultra_avalanche,
+            coverage: backing.ultra_avalanche ? (backing.treasury_ultra_avalanche / backing.ultra_avalanche) * 100 : 0,
+            note: backing.treasury_ultra_avalanche === 0 ? 'FundBridge deployment, not in Theo custody' : null
+        },
+        {
             chain: 'Solana',
             treasury: backing.treasury_ultra_solana,
             supply: backing.ultra_solana,
@@ -298,9 +329,13 @@ function updateTreasuryTable(backing) {
         const treasuryVal = row.treasury !== null ? formatNumber(row.treasury, 2) : (row.note || '-');
         const coverageVal = row.coverage !== null ? formatPercent(row.coverage, 1) : '-';
 
+        const chainCell = row.note
+            ? `${row.chain}<span class="block text-xs text-gray-500">${row.note}</span>`
+            : row.chain;
+
         return `
             <tr class="${rowClass}">
-                <td class="px-5 py-3">${row.chain}</td>
+                <td class="px-5 py-3">${chainCell}</td>
                 <td class="text-right px-5 py-3">${treasuryVal}</td>
                 <td class="text-right px-5 py-3">${formatNumber(row.supply, 2)}</td>
                 <td class="text-right px-5 py-3">${coverageVal}</td>
