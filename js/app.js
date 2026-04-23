@@ -106,6 +106,8 @@ function updateUsdBackingSummary(backing) {
     const liab = backing.usd_liabilities;
     const assets = backing.usd_assets;
     const ratio = backing.usd_backing_ratio;
+    const ratioExQueue = backing.usd_backing_ratio_ex_queue;
+    const queueUltra = backing.redemption_queue_ultra_total;
     const price = backing.tultra_usd_price;
     const priceSource = backing.tultra_usd_price_source || 'unavailable';
     const implied = backing.tultra_implied_price_from_vault;
@@ -150,6 +152,20 @@ function updateUsdBackingSummary(backing) {
         ? `<span class="${isCircular ? 'text-yellow-300' : 'text-white'} font-semibold">${formatPercent(ratio * 100)}</span>${isCircular ? ' <span class="text-gray-500 text-xs">(Theo-reported, not independently verified)</span>' : ''}`
         : '<span class="text-yellow-300 font-semibold">indeterminate</span>';
 
+    // In-flight redemption queue: ULTRA in Libeara's UltraManagerFiat, waiting for
+    // the next settlement epoch. Shown as supplementary context — already counted
+    // in usd_assets/usd_backing_ratio. The ex-queue ratio is the post-settlement
+    // floor, useful if the queue clears against a tULTRA burn rather than
+    // returning as treasury USDC.
+    let queueLine = '';
+    if (queueUltra && queueUltra > 0.01 && price) {
+        const queueUsd = queueUltra * price;
+        const exQueueTxt = (ratioExQueue !== null && ratioExQueue !== undefined)
+            ? ` · ex-queue floor: <span class="text-gray-300">${formatPercent(ratioExQueue * 100)}</span>`
+            : '';
+        queueLine = `<div class="md:col-span-2 text-xs text-gray-400 italic">↳ includes ${formatNumber(queueUltra, 0)} ULTRA ($${formatNumber(queueUsd, 0)}) in <a href="https://etherscan.io/address/0x257062cb4ca916299fc49cb8fde1e34b43033c93" target="_blank" class="text-blue-400 hover:underline">UltraManagerFiat</a> redemption queue${exQueueTxt}</div>`;
+    }
+
     container.innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1 text-gray-300">
             <div>thBILL NAV: <span class="text-white">${nav ? '$' + nav.toFixed(6) : '-'}</span> <span class="text-gray-500">(USDC/share)</span></div>
@@ -159,6 +175,7 @@ function updateUsdBackingSummary(backing) {
             <div class="md:col-span-2 mt-1">tULTRA USD price: ${priceLine}</div>
             ${navDetailLine}
             <div class="md:col-span-2 mt-1">USD backing ratio: ${ratioLine}</div>
+            ${queueLine}
         </div>
     `;
 }
@@ -302,6 +319,22 @@ function updateBackingTable(backing) {
         pct: (backing.ultra_total / supply) * 100
     });
 
+    // In-flight redemption queue — ULTRA that Theo has moved to Libeara's
+    // UltraManagerFiat for fiat settlement. Not double-counted with treasury
+    // (it left TREASURY to get there), and it's the reason usd_backing_ratio
+    // can temporarily dip between transfer and epoch settlement.
+    const queueUltra = backing.redemption_queue_ultra_total;
+    if (queueUltra && queueUltra > 0.01) {
+        rows.push({
+            asset: 'Redemption Queue',
+            note: 'UltraManagerFiat (in-flight, settles next epoch)',
+            amount: queueUltra,
+            unit: 'ULTRA',
+            pct: (queueUltra / supply) * 100,
+            isInFlight: true
+        });
+    }
+
     let defiUsdc = 0;
     if (backing.treasury_defi_positions) {
         for (const pos of backing.treasury_defi_positions) {
@@ -333,6 +366,7 @@ function updateBackingTable(backing) {
     tbody.innerHTML = rows.map(row => {
         let rowClass = '';
         if (row.isGap) rowClass = 'bg-yellow-900/20 text-yellow-400';
+        if (row.isInFlight) rowClass = 'bg-blue-900/20 text-blue-300 italic';
         if (row.isSupply) rowClass = 'bg-gray-900 font-bold border-b border-gray-700';
 
         const amount = row.isCurrency ? formatCurrency(row.amount, 2) : formatNumber(row.amount, 2);
