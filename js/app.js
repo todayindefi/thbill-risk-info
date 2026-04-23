@@ -314,6 +314,35 @@ function updateBackingTable(backing) {
         }
     }
 
+    let defiUsdc = 0;
+    if (backing.treasury_defi_positions) {
+        for (const pos of backing.treasury_defi_positions) {
+            defiUsdc += pos.amount;
+            rows.push({
+                asset: `${pos.protocol} ${pos.token}`,
+                note: `Treasury supply on ${pos.protocol}`,
+                amount: pos.amount,
+                unit: 'USDC',
+                usd: pos.amount,
+                pct: (pos.amount / supply) * 100,
+                isCurrency: true
+            });
+        }
+    }
+
+    const spotUsdc = (backing.treasury_usdc || 0) - defiUsdc;
+    if (spotUsdc > 0.01 || defiUsdc === 0) {
+        rows.push({
+            asset: 'USDC (spot)',
+            note: 'Treasury wallet',
+            amount: spotUsdc,
+            unit: 'USDC',
+            usd: spotUsdc,
+            pct: (spotUsdc / supply) * 100,
+            isCurrency: true
+        });
+    }
+
     const tbody = document.getElementById('backing-table');
     tbody.innerHTML = rows.map(row => {
         let rowClass = '';
