@@ -263,6 +263,57 @@ function updateNetFlow(flow, supplyHistory, currentSupply) {
     }
 }
 
+function updateWrapperIntegrity(backing) {
+    const container = document.getElementById('wrapper-integrity-panel');
+    if (!container || !backing) return;
+
+    const wrapperBal = backing.ultra_balance_of_wrapper;
+    const mode = backing.tultra_wrapper_backing_mode;
+    const tultraSupply = backing.tultra_supply;
+    const treasuryUltra = backing.treasury_ultra_total || 0;
+    const queueUltra = backing.redemption_queue_ultra_total || 0;
+    const usdc = backing.treasury_usdc || 0;
+    const price = backing.tultra_usd_price;
+
+    const isSynthetic = mode === 'synthetic_attested';
+    const modeBadge = isSynthetic
+        ? '<span class="inline-block px-2 py-0.5 rounded bg-yellow-900/40 text-yellow-300 border border-yellow-700/50 text-xs">synthetic / attested</span>'
+        : '<span class="inline-block px-2 py-0.5 rounded bg-green-900/40 text-green-300 border border-green-700/50 text-xs">custodial</span>';
+
+    const wrapperLine = wrapperBal != null
+        ? `<span class="${wrapperBal < 0.01 ? 'text-yellow-300' : 'text-green-300'} font-mono">${formatNumber(wrapperBal, 2)} ULTRA</span>`
+        : '<span class="text-gray-500">—</span>';
+
+    const theoCustody = treasuryUltra + queueUltra;
+    const gap = tultraSupply - theoCustody;
+    const usdcUltraEquiv = price ? usdc / price : 0;
+    const netGap = gap - usdcUltraEquiv;
+
+    container.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-gray-300">
+            <div class="md:col-span-2 mb-2">Backing model: ${modeBadge}</div>
+            <div>ULTRA.balanceOf(tULTRA wrapper): ${wrapperLine}</div>
+            <div>tULTRA.totalAssets(): <span class="font-mono">${formatNumber(tultraSupply, 2)}</span> <span class="text-gray-500 text-xs">(attested)</span></div>
+            <div>tULTRA.totalSupply(): <span class="font-mono">${formatNumber(tultraSupply, 2)}</span></div>
+            <div>convertToAssets(1): <span class="font-mono">1.0</span> <span class="text-gray-500 text-xs">(no yield accrual via wrapper)</span></div>
+            <div class="md:col-span-2 mt-2 pt-3 border-t border-gray-700">
+                <div class="text-gray-400 text-xs mb-1">Custody cross-check — where the real ULTRA sits:</div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
+                    <div>• Theo treasury (ETH/ARB/SOL): <span class="font-mono">${formatNumber(treasuryUltra, 2)}</span></div>
+                    <div>• UltraManagerFiat in-flight: <span class="font-mono">${formatNumber(queueUltra, 2)}</span></div>
+                    <div>• Theo-custodied total: <span class="font-mono">${formatNumber(theoCustody, 2)}</span> <span class="text-gray-500 text-xs">(${((theoCustody/tultraSupply)*100).toFixed(2)}% of tULTRA)</span></div>
+                    <div>• Gap vs tULTRA supply: <span class="${gap > 0.01 ? 'text-yellow-300' : 'text-green-300'} font-mono">${formatNumber(gap, 2)}</span></div>
+                    <div class="md:col-span-2">• USDC cushion: <span class="font-mono">$${formatNumber(usdc, 0)}</span> ≈ <span class="font-mono">${formatNumber(usdcUltraEquiv, 0)}</span> ULTRA-equivalent at NAV</div>
+                    <div class="md:col-span-2 mt-1">
+                        Net reconciliation: <span class="${Math.abs(netGap) < 100 || netGap < 0 ? 'text-green-300' : 'text-yellow-300'} font-semibold">${netGap < 0 ? 'covered' : `${formatNumber(netGap, 0)} ULTRA short`}</span>
+                        <span class="text-gray-500 text-xs">(treasury + queue + USDC cushion vs tULTRA supply)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 function updateBackingTable(backing) {
     if (!backing) return;
 
@@ -977,6 +1028,7 @@ async function fetchAndUpdate() {
         updateBackingRatio(data.backing);
         updateUsdBackingSummary(data.backing);
         updateBackingTable(data.backing);
+        updateWrapperIntegrity(data.backing);
         updateTreasuryTable(data.backing);
         updatePegStatus(data.peg);
 

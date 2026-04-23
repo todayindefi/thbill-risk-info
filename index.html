@@ -61,10 +61,16 @@
                 </p>
                 <ul class="text-gray-300 leading-relaxed space-y-2 list-disc pl-5">
                     <li>
-                        <strong>Backing is on-chain verifiable.</strong> Libeara posts the daily ULTRA NAV
-                        to a public contract, and Theo's treasury holdings (ULTRA + USDC) are readable from
-                        chain state. The USD backing ratio, NAV, and any drift against Theo's reported NAV
-                        are shown below.
+                        <strong>Backing has two transparency layers.</strong> <em>NAV</em> is strong:
+                        Libeara posts the daily ULTRA NAV to a public on-chain contract
+                        (UltraManager.lastSetMintExchangeRate), signed by Libeara's admin key.
+                        <em>Custody</em> is attested: the tULTRA wrapper is a synthetic ERC-4626
+                        that holds zero ULTRA — the 129.46M tULTRA outstanding is backed by
+                        ULTRA that Theo custodies in a separately-disclosed treasury wallet plus
+                        USDC earmarked to mint ULTRA shares. The backing ratio shown below is a
+                        reconciliation against Theo's disclosed treasury, not a property enforced
+                        by the wrapper contract. See Wrapper Integrity and Treasury Holdings for
+                        the full breakdown.
                     </li>
                     <li>
                         <strong>Main risk is centralization.</strong> Minting, redemption, and treasury
@@ -100,10 +106,10 @@
                     <div class="text-sm font-medium text-white">Operational</div>
                     <div class="text-xs text-gray-400 mt-1">Standard RWA</div>
                 </div>
-                <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 text-center">
-                    <div class="text-2xl mb-2" title="5/5 stars">★★★★★</div>
+                <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 text-center" title="NAV is strong — Libeara posts daily on-chain, epoch-stamped. Custody is attested — tULTRA wrapper holds zero ULTRA, so coverage is a cross-check against Theo's treasury disclosures rather than a contract invariant.">
+                    <div class="text-2xl mb-2" title="3/5 stars">★★★☆☆</div>
                     <div class="text-sm font-medium text-white">Transparency</div>
-                    <div class="text-xs text-gray-400 mt-1">Custody + NAV fully on-chain verified (Libeara-attested)</div>
+                    <div class="text-xs text-gray-400 mt-1">NAV on-chain (strong); custody attested (medium)</div>
                 </div>
             </div>
         </section>
@@ -122,7 +128,7 @@
                 <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
                     <div class="text-sm text-gray-400 mb-1">USD Backing Ratio</div>
                     <div class="text-2xl font-bold" id="backing-ratio">-</div>
-                    <div class="text-xs text-gray-500 mt-2" id="backing-ratio-note">Treasury assets (ULTRA + USDC) ÷ thBILL in circulation</div>
+                    <div class="text-xs text-gray-500 mt-2" id="backing-ratio-note">Theo treasury custody + in-flight queue + USDC ÷ thBILL liability (reconciliation, not wrapper-held)</div>
                 </div>
                 <!-- 7d Flow -->
                 <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
@@ -145,11 +151,15 @@
             <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
                 <div class="p-5">
                     <p class="text-gray-300 text-sm mb-4">
-                        thBILL → tULTRA (Theo's wrapper) → ULTRA (Libeara T-bills) + cash reserves.
-                        The USD backing ratio prices Theo-custodied ULTRA at Libeara's on-chain NAV
-                        (UltraManager.lastSetMintExchangeRate, signed daily by Libeara's admin key)
-                        × the tULTRA wrapper rate, and compares it against thBILL liabilities
-                        (supply × on-chain NAV).
+                        thBILL wraps tULTRA, a synthetic ERC-4626 that declares ULTRA (Libeara's
+                        T-bill token) as its underlying but holds <span class="text-yellow-300">zero ULTRA</span> —
+                        see <a href="#" class="text-blue-400 hover:underline">Wrapper Integrity</a> below.
+                        The USD backing ratio is a <em>reconciliation</em>: Theo's treasury ULTRA
+                        (across ETH/ARB/SOL) + any in-flight redemption queue ULTRA + USDC cushion,
+                        valued at Libeara's on-chain NAV
+                        (<code class="text-xs bg-gray-700 px-1 py-0.5 rounded">UltraManager.lastSetMintExchangeRate</code>,
+                        signed daily by Libeara's admin key), compared against thBILL liabilities
+                        (supply × thBILL NAV).
                     </p>
                     <div id="usd-backing-summary" class="mb-4 text-sm">
                         <!-- populated by app.js -->
@@ -174,6 +184,36 @@
                     USDC cushion is stacked on top of tULTRA collateral. See USD Value column and the
                     USD Backing Summary above for dollar-denominated coverage. The per-chain ULTRA
                     custody and in-flight redemption queue are broken out in Treasury Holdings below.
+                </div>
+            </div>
+        </section>
+
+        <!-- Wrapper Integrity (tULTRA) -->
+        <section class="mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-white">Wrapper Integrity (tULTRA)</h2>
+            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                <div class="p-5">
+                    <p class="text-gray-300 text-sm mb-4">
+                        tULTRA is a UUPS-upgradeable ERC-4626 whose declared <code class="text-xs bg-gray-700 px-1 py-0.5 rounded">asset()</code>
+                        is ULTRA. The wrapper holds <span class="text-yellow-300 font-semibold">zero ULTRA</span> —
+                        every share was minted via <code class="text-xs bg-gray-700 px-1 py-0.5 rounded">depositOptimistic</code>
+                        (MINTER_ROLE-gated), not via the public ERC-4626 <code class="text-xs bg-gray-700 px-1 py-0.5 rounded">deposit()</code>.
+                        <code class="text-xs bg-gray-700 px-1 py-0.5 rounded">totalAssets()</code> is entirely
+                        <code class="text-xs bg-gray-700 px-1 py-0.5 rounded">totalAssetsPending</code> — an attested accounting value,
+                        not a derived balance. Redemption pays <span class="text-white">USDC through a 14-day escrow</span>,
+                        not ULTRA — ULTRA is a reference unit for NAV accounting, not a claimable asset.
+                    </p>
+                    <div id="wrapper-integrity-panel" class="text-sm">
+                        <!-- populated by app.js -->
+                    </div>
+                </div>
+                <div class="px-5 py-3 text-xs text-gray-500 border-t border-gray-700">
+                    <strong class="text-gray-400">Trust assumption:</strong> coverage relies on (a) the disclosed
+                    TREASURY address being the complete set of Theo-held ULTRA, and (b) Theo's off-chain accounting
+                    faithfully matching on-chain <code>totalAssets</code>. Neither is enforceable from the tULTRA
+                    contract alone. Per
+                    <a href="https://docs.theo.xyz/thbill/tultra" target="_blank" class="text-blue-400 hover:underline">Theo's own docs</a>,
+                    tULTRA is "backed 1:1 by ULTRA shares <em>or USDC reserved to mint ULTRA shares</em>."
                 </div>
             </div>
         </section>
@@ -359,9 +399,18 @@
                 <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
                     <h3 class="font-semibold text-white mb-2">Technical Risk</h3>
                     <p class="text-gray-300 text-sm">
-                        The thBILL vault follows the ERC-4626 standard. Contracts are deployed on Ethereum
-                        and Arbitrum. The protocol uses standard patterns but contracts are upgradeable,
-                        which introduces admin key risks. Multi-chain deployment adds bridge risk.
+                        The thBILL vault follows the ERC-4626 standard. Both thBILL and tULTRA are
+                        UUPS-upgradeable (the UPGRADER_ROLE can swap the implementation with no
+                        timelock). tULTRA is specifically a <strong>synthetic ERC-4626</strong>:
+                        it declares ULTRA as its <code class="text-xs bg-gray-700 px-1 py-0.5 rounded">asset()</code>
+                        but holds zero ULTRA — <code class="text-xs bg-gray-700 px-1 py-0.5 rounded">totalAssets()</code>
+                        is an admin-attested accounting value, mints flow through MINTER_ROLE-gated
+                        <code class="text-xs bg-gray-700 px-1 py-0.5 rounded">depositOptimistic</code>
+                        (not the public <code class="text-xs bg-gray-700 px-1 py-0.5 rounded">deposit()</code>),
+                        and redemption pays USDC through a 14-day escrow, not ULTRA. An integrator
+                        reading the 4626 interface alone would not infer these properties; the dashboard's
+                        Wrapper Integrity panel above exposes them explicitly. Multi-chain deployment adds
+                        bridge risk (DVN config audited 2026-04-21; bridge adapter code likely post-audit).
                     </p>
                 </div>
 
