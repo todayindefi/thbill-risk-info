@@ -30,6 +30,7 @@
                 <div>
                     <h1 class="text-2xl font-bold text-white">thBILL Risk Report</h1>
                     <p class="text-gray-400 text-sm mt-1">Independent risk assessment of Theo's Short Duration US Treasury Fund</p>
+                    <p class="text-gray-500 text-xs mt-0.5">Independent third-party review — not operated by Theo Network</p>
                 </div>
                 <div class="text-right text-sm text-gray-500">
                     <div>Last updated: <span id="last-updated">-</span></div>
@@ -43,7 +44,7 @@
         <div class="max-w-6xl mx-auto px-4">
             <div class="flex">
                 <button data-tab="risk" class="tab-btn px-4 py-3 text-sm font-medium border-b-2 border-theo-blue text-white transition">Risk Assessment</button>
-                <button data-tab="defi" class="tab-btn px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white transition">DeFi Integrations</button>
+                <button data-tab="defi" class="tab-btn px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white transition">Where to Use thBILL</button>
             </div>
         </div>
     </nav>
@@ -61,6 +62,12 @@
                 </p>
                 <ul class="text-gray-300 leading-relaxed space-y-2 list-disc pl-5">
                     <li>
+                        <strong>Who this applies to.</strong> If you have KYC with Theo + Libeara,
+                        your exit is primary redemption at NAV (~4 business days, $50K min). If not,
+                        your only exit is the DEX — at the discount shown in Live Metrics above.
+                        Read Peg Performance and Secondary Market Liquidity first.
+                    </li>
+                    <li>
                         <strong>Backing has two transparency layers.</strong> <em>NAV</em> is strong:
                         Libeara posts the daily ULTRA NAV to a public on-chain contract
                         (UltraManager.lastSetMintExchangeRate), signed by Libeara's admin key.
@@ -74,7 +81,7 @@
                     </li>
                     <li>
                         <strong>Main risk is centralization.</strong> Minting, redemption, and treasury
-                        management are Theo-controlled, with Libeara as the underlying fund administrator.
+                        management are Theo-controlled, with Libeara as the ULTRA tokenization partner.
                         No independent auditor or custodian attestations are published — the on-chain NAV
                         write is the primary transparency mechanism.
                     </li>
@@ -130,12 +137,12 @@
                     <div class="text-2xl font-bold" id="backing-ratio">-</div>
                     <div class="text-xs text-gray-500 mt-2" id="backing-ratio-note">Theo treasury custody + in-flight queue + USDC ÷ thBILL liability (reconciliation, not wrapper-held)</div>
                 </div>
-                <!-- 7d Flow -->
-                <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
-                    <div class="text-sm text-gray-400 mb-1">7d Net Flow</div>
-                    <div class="text-2xl font-bold" id="net-flow">-</div>
-                    <div class="text-xs text-gray-500 mt-2" id="flow-note"></div>
-                </div>
+                <!-- Peg Discount (retail's actual exit cost when primary redemption is KYC-gated) -->
+                <a href="#peg-performance" class="bg-gray-800 rounded-lg p-5 border border-gray-700 block hover:border-gray-600 transition">
+                    <div class="text-sm text-gray-400 mb-1">Peg Discount</div>
+                    <div class="text-2xl font-bold" id="peg-discount-card">-</div>
+                    <div class="text-xs text-gray-500 mt-2">Current DEX exit cost vs NAV — the number retail should watch</div>
+                </a>
                 <!-- Days Since Last Redemption -->
                 <div class="bg-gray-800 rounded-lg p-5 border border-gray-700" title="thBILL peg is maintained by redemption arb. Long gaps = peg arb inactive; discount can drift without correction.">
                     <div class="text-sm text-gray-400 mb-1">Days Since Last Redemption</div>
@@ -172,47 +179,19 @@
                             <th class="text-right px-5 py-3 text-gray-400 font-medium">Amount</th>
                             <th class="text-right px-5 py-3 text-gray-400 font-medium">Unit</th>
                             <th class="text-right px-5 py-3 text-gray-400 font-medium">USD Value</th>
-                            <th class="text-right px-5 py-3 text-gray-400 font-medium">% of thBILL supply</th>
                         </tr>
                     </thead>
                     <tbody id="backing-table">
-                        <tr><td colspan="5" class="px-5 py-3 text-gray-500">Loading...</td></tr>
+                        <tr><td colspan="4" class="px-5 py-3 text-gray-500">Loading...</td></tr>
                     </tbody>
                 </table>
                 <div class="px-5 py-3 text-xs text-gray-500 border-t border-gray-700">
-                    % column is tokens-per-thBILL-share, not USD backing — rows can sum over 100% when
-                    USDC cushion is stacked on top of tULTRA collateral. See USD Value column and the
-                    USD Backing Summary above for dollar-denominated coverage. The per-chain ULTRA
-                    custody and in-flight redemption queue are broken out in Treasury Holdings below.
-                </div>
-            </div>
-        </section>
-
-        <!-- Wrapper Integrity (tULTRA) -->
-        <section class="mb-8">
-            <h2 class="text-xl font-semibold mb-4 text-white">Wrapper Integrity (tULTRA)</h2>
-            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-                <div class="p-5">
-                    <p class="text-gray-300 text-sm mb-4">
-                        tULTRA is a UUPS-upgradeable ERC-4626 whose declared <code class="text-xs bg-gray-700 px-1 py-0.5 rounded">asset()</code>
-                        is ULTRA. The wrapper holds <span class="text-yellow-300 font-semibold">zero ULTRA</span> —
-                        every share was minted via <code class="text-xs bg-gray-700 px-1 py-0.5 rounded">depositOptimistic</code>
-                        (MINTER_ROLE-gated), not via the public ERC-4626 <code class="text-xs bg-gray-700 px-1 py-0.5 rounded">deposit()</code>.
-                        <code class="text-xs bg-gray-700 px-1 py-0.5 rounded">totalAssets()</code> is entirely
-                        <code class="text-xs bg-gray-700 px-1 py-0.5 rounded">totalAssetsPending</code> — an attested accounting value,
-                        not a derived balance. Redemption pays <span class="text-white">USDC through a 14-day escrow</span>,
-                        not ULTRA — ULTRA is a reference unit for NAV accounting, not a claimable asset.
-                    </p>
-                    <div id="wrapper-integrity-panel" class="text-sm">
-                        <!-- populated by app.js -->
-                    </div>
-                </div>
-                <div class="px-5 py-3 text-xs text-gray-500 border-t border-gray-700">
-                    <strong class="text-gray-400">Trust assumption:</strong> coverage relies on (a) the disclosed
-                    TREASURY address being the complete set of Theo-held ULTRA, and (b) Theo's off-chain accounting
-                    faithfully matching on-chain <code>totalAssets</code>. Neither is enforceable from the tULTRA
-                    contract alone. Per
-                    <a href="https://docs.theo.xyz/thbill/tultra" target="_blank" class="text-blue-400 hover:underline">Theo's own docs</a>,
+                    Per-chain ULTRA custody and in-flight redemption queue are broken out in Treasury
+                    Holdings below. <strong class="text-gray-400">Trust assumption:</strong> coverage
+                    relies on (a) the disclosed TREASURY address being the complete set of Theo-held
+                    ULTRA, and (b) Theo's off-chain accounting faithfully matching on-chain
+                    <code>totalAssets</code> — neither is enforceable from the tULTRA contract alone.
+                    Per <a href="https://docs.theo.xyz/thbill/tultra" target="_blank" class="text-blue-400 hover:underline">Theo's own docs</a>,
                     tULTRA is "backed 1:1 by ULTRA shares <em>or USDC reserved to mint ULTRA shares</em>."
                 </div>
             </div>
@@ -225,18 +204,19 @@
                 <div class="p-5">
                     <p class="text-gray-300 text-sm mb-4">
                         ULTRA held by the Theo Treasury wallet
-                        (<code class="text-xs bg-gray-700 px-1 py-0.5 rounded">0xAECCa546baFB16735b273702632C8Cbb83509d8F</code>)
+                        (<a href="https://etherscan.io/address/0xAECCa546baFB16735b273702632C8Cbb83509d8F" target="_blank" class="text-blue-400 hover:underline"><code class="text-xs bg-gray-700 px-1 py-0.5 rounded">0xAECCa546baFB16735b273702632C8Cbb83509d8F</code></a>)
                         on each chain, valued at the on-chain ULTRA NAV. Plus any ULTRA currently in Libeara's
-                        fiat redemption queue — in-flight but still Theo-backed until epoch settlement.
+                        fiat redemption queue — in-flight but still Theo-backed until epoch settlement. The
+                        tULTRA wrapper contract itself holds zero ULTRA (synthetic 4626); see the top row below.
                     </p>
                 </div>
                 <table class="w-full text-sm">
                     <thead class="bg-gray-900">
                         <tr>
-                            <th class="text-left px-5 py-3 text-gray-400 font-medium">Chain</th>
+                            <th class="text-left px-5 py-3 text-gray-400 font-medium">Chain / Contract</th>
                             <th class="text-right px-5 py-3 text-gray-400 font-medium">Amount</th>
                             <th class="text-right px-5 py-3 text-gray-400 font-medium">USD Value</th>
-                            <th class="text-right px-5 py-3 text-gray-400 font-medium">% of Liability</th>
+                            <th class="text-right px-5 py-3 text-gray-400 font-medium">% of thBILL Liability</th>
                         </tr>
                     </thead>
                     <tbody id="treasury-table">
@@ -292,7 +272,7 @@
 
         <!-- Peg Performance -->
         <section class="mb-8">
-            <h2 class="text-xl font-semibold mb-4 text-white">Peg Performance</h2>
+            <h2 id="peg-performance" class="text-xl font-semibold mb-4 text-white">Peg Performance</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
                     <div class="text-sm text-gray-400 mb-1">NAV Per Share</div>
@@ -359,7 +339,7 @@
                             <th class="text-left px-5 py-3 text-gray-400 font-medium">Chain</th>
                             <th class="text-left px-5 py-3 text-gray-400 font-medium">Market</th>
                             <th class="text-right px-5 py-3 text-gray-400 font-medium">TVL</th>
-                            <th class="text-right px-5 py-3 text-gray-400 font-medium">2% Depth</th>
+                            <th class="text-right px-5 py-3 text-gray-400 font-medium" title="How much you can exit in one trade before price moves 2%">2% Depth</th>
                             <th class="text-right px-5 py-3 text-gray-400 font-medium">24h Volume</th>
                             <th class="text-right px-5 py-3 text-gray-400 font-medium">Spread</th>
                         </tr>
@@ -382,6 +362,9 @@
                         Theo Network is the issuer of thBILL. The protocol is relatively new and operates with
                         centralized control over minting and redemption. Users must trust Theo to maintain
                         proper backing and honor redemptions. There is no on-chain governance mechanism.
+                        Theo Protocol Corporation is domiciled in Panama and is not a licensed financial
+                        institution anywhere. Token holders' legal claim in worst case is against a Panama
+                        entity, not direct ownership of fund shares.
                     </p>
                 </div>
 
@@ -391,7 +374,8 @@
                     <p class="text-gray-300 text-sm">
                         thBILL is highly centralized. Key functions (minting, redemption, treasury management)
                         are controlled by Theo. The underlying ULTRA tokens are issued by Libeara, adding
-                        another centralized dependency. Smart contracts are upgradeable.
+                        another centralized dependency. Smart contracts are upgradeable. Both thBILL and
+                        tULTRA are UUPS-upgradeable with no timelock; admin actions take effect immediately.
                     </p>
                 </div>
 
@@ -407,10 +391,11 @@
                         is an admin-attested accounting value, mints flow through MINTER_ROLE-gated
                         <code class="text-xs bg-gray-700 px-1 py-0.5 rounded">depositOptimistic</code>
                         (not the public <code class="text-xs bg-gray-700 px-1 py-0.5 rounded">deposit()</code>),
-                        and redemption pays USDC through a 14-day escrow, not ULTRA. An integrator
-                        reading the 4626 interface alone would not infer these properties; the dashboard's
-                        Wrapper Integrity panel above exposes them explicitly. Multi-chain deployment adds
-                        bridge risk (DVN config audited 2026-04-21; bridge adapter code likely post-audit).
+                        and redemption pays USDC. An integrator reading the 4626 interface alone would
+                        not infer these properties; see the synthetic · attested badge in the USD Backing
+                        Summary and the tULTRA wrapper row in Treasury Holdings above for live values.
+                        Multi-chain deployment adds bridge risk (DVN config audited 2026-04-21; bridge
+                        adapter code likely post-audit).
                     </p>
                 </div>
 
@@ -419,8 +404,10 @@
                     <h3 class="font-semibold text-white mb-2">Minting & Redemption</h3>
                     <p class="text-gray-300 text-sm">
                         Minting and redemption are processed through Theo's system, not permissionlessly on-chain.
-                        There may be delays during high-volume periods. Minimum redemption amounts may apply.
-                        The process involves KYC for large amounts.
+                        There may be delays during high-volume periods.
+                        <strong class="text-white">KYC is required for all primary redemption regardless of size</strong>
+                        (Libeara's ≥$50K minimum applies on top for institutional redemption). Non-KYC users
+                        can only exit via DEX, at the discount shown in Peg Performance.
                     </p>
                 </div>
 

@@ -114,6 +114,25 @@ function updateUsdBackingSummary(backing) {
     const onchainNav = backing.ultra_onchain_nav;
     const onchainEpoch = backing.ultra_onchain_nav_epoch;
     const drift = backing.theo_nav_drift_pct;
+    const backingMode = backing.tultra_wrapper_backing_mode;
+
+    // Backing model badge — auto-flips based on on-chain wrapper holdings.
+    // synthetic_attested: wrapper holds 0 ULTRA, totalAssets is admin-attested
+    // custodial: wrapper holds ULTRA directly, coverage is contract-enforced
+    let modeBadgeLine = '';
+    if (backingMode === 'synthetic_attested') {
+        modeBadgeLine = `
+            <div class="md:col-span-2 mb-3 pb-3 border-b border-gray-700">
+                <span class="inline-block px-2 py-0.5 rounded bg-yellow-900/40 text-yellow-300 border border-yellow-700/50 text-xs font-semibold">synthetic · attested</span>
+                <span class="text-xs text-gray-400 ml-2">tULTRA wrapper holds 0 ULTRA. Coverage is a reconciliation against Theo's treasury custody, not contract-enforced.</span>
+            </div>`;
+    } else if (backingMode === 'custodial') {
+        modeBadgeLine = `
+            <div class="md:col-span-2 mb-3 pb-3 border-b border-gray-700">
+                <span class="inline-block px-2 py-0.5 rounded bg-green-900/40 text-green-300 border border-green-700/50 text-xs font-semibold">custodial</span>
+                <span class="text-xs text-gray-400 ml-2">tULTRA wrapper holds ULTRA directly; coverage is contract-enforced.</span>
+            </div>`;
+    }
 
     const isCircular = priceSource === 'vault_implied_circular';
     const isOnchain = priceSource === 'onchain_ultramanager';
@@ -168,6 +187,7 @@ function updateUsdBackingSummary(backing) {
 
     container.innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1 text-gray-300">
+            ${modeBadgeLine}
             <div>thBILL NAV: <span class="text-white">${nav ? '$' + nav.toFixed(6) : '-'}</span> <span class="text-gray-500">(USDC/share)</span></div>
             <div>thBILL supply: <span class="text-white">${formatNumber(supply, 0)}</span></div>
             <div>USD liabilities: <span class="text-white">${liab ? '$' + formatNumber(liab, 0) : '-'}</span></div>
@@ -180,57 +200,78 @@ function updateUsdBackingSummary(backing) {
     `;
 }
 
+function updatePegDiscountCard(peg) {
+    const elem = document.getElementById('peg-discount-card');
+    if (!elem) return;
+    const pd = peg ? peg.premium_discount_pct : null;
+
+    elem.classList.remove('text-green-400', 'text-yellow-400', 'text-red-400');
+    if (pd === null || pd === undefined) {
+        elem.textContent = '-';
+        return;
+    }
+    const sign = pd >= 0 ? '+' : '';
+    elem.textContent = sign + pd.toFixed(2) + '%';
+    const absPd = Math.abs(pd);
+    if (absPd < 0.5) {
+        elem.classList.add('text-green-400');
+    } else if (absPd < 1.0) {
+        elem.classList.add('text-yellow-400');
+    } else {
+        elem.classList.add('text-red-400');
+    }
+}
+
 function updateNetFlow(flow, supplyHistory, currentSupply) {
     if (!flow) return;
 
+    // The 7d Net Flow card was replaced by the Peg Discount card in Live
+    // Metrics. Skip rendering the flow stat when those elements are absent.
     const elem = document.getElementById('net-flow');
     const noteElem = document.getElementById('flow-note');
+    if (elem && noteElem) {
+        let net7d = null;
+        let pct7d = null;
+        let windowDays = 7;
+        let insufficient = false;
 
-    // Compute 7d net flow from supply history. History is a sorted array of
-    // { timestamp, thbill_supply } hourly snapshots. We pick the entry closest
-    // to (now - 7d); if history is too short, fall back to the oldest entry
-    // and label the window accordingly.
-    let net7d = null;
-    let pct7d = null;
-    let windowDays = 7;
-    let insufficient = false;
-
-    if (Array.isArray(supplyHistory) && supplyHistory.length > 0 && currentSupply != null) {
-        const nowMs = Date.now();
-        const targetMs = nowMs - 7 * 24 * 60 * 60 * 1000;
-        let closest = supplyHistory[0];
-        let closestDelta = Math.abs(new Date(
-            closest.timestamp.endsWith('Z') ? closest.timestamp : closest.timestamp + 'Z'
-        ).getTime() - targetMs);
-        for (const entry of supplyHistory) {
-            const ts = entry.timestamp.endsWith('Z') ? entry.timestamp : entry.timestamp + 'Z';
-            const delta = Math.abs(new Date(ts).getTime() - targetMs);
-            if (delta < closestDelta) {
-                closest = entry;
-                closestDelta = delta;
+        if (Array.isArray(supplyHistory) && supplyHistory.length > 0 && currentSupply != null) {
+            const nowMs = Date.now();
+            const targetMs = nowMs - 7 * 24 * 60 * 60 * 1000;
+            let closest = supplyHistory[0];
+            let closestDelta = Math.abs(new Date(
+                closest.timestamp.endsWith('Z') ? closest.timestamp : closest.timestamp + 'Z'
+            ).getTime() - targetMs);
+            for (const entry of supplyHistory) {
+                const ts = entry.timestamp.endsWith('Z') ? entry.timestamp : entry.timestamp + 'Z';
+                const delta = Math.abs(new Date(ts).getTime() - targetMs);
+                if (delta < closestDelta) {
+                    closest = entry;
+                    closestDelta = delta;
+                }
             }
+            const oldTs = closest.timestamp.endsWith('Z') ? closest.timestamp : closest.timestamp + 'Z';
+            const actualWindowMs = nowMs - new Date(oldTs).getTime();
+            windowDays = actualWindowMs / (24 * 60 * 60 * 1000);
+            insufficient = windowDays < 6.5;
+            net7d = currentSupply - closest.thbill_supply;
+            pct7d = closest.thbill_supply ? (net7d / closest.thbill_supply) * 100 : 0;
         }
-        const oldTs = closest.timestamp.endsWith('Z') ? closest.timestamp : closest.timestamp + 'Z';
-        const actualWindowMs = nowMs - new Date(oldTs).getTime();
-        windowDays = actualWindowMs / (24 * 60 * 60 * 1000);
-        insufficient = windowDays < 6.5; // history doesn't span a full week yet
-        net7d = currentSupply - closest.thbill_supply;
-        pct7d = closest.thbill_supply ? (net7d / closest.thbill_supply) * 100 : 0;
-    }
 
-    if (net7d !== null) {
-        const direction = net7d >= 0 ? '+' : '';
-        elem.textContent = direction + formatNumber(net7d, 0) + ' thBILL';
-        elem.classList.add(net7d >= 0 ? 'text-green-400' : 'text-red-400');
-        if (insufficient) {
-            noteElem.textContent = `${direction}${formatPercent(pct7d, 4)} over ${windowDays.toFixed(1)}d (history < 7d)`;
+        if (net7d !== null) {
+            const direction = net7d >= 0 ? '+' : '';
+            elem.textContent = direction + formatNumber(net7d, 0) + ' thBILL';
+            elem.classList.add(net7d >= 0 ? 'text-green-400' : 'text-red-400');
+            if (insufficient) {
+                noteElem.textContent = `${direction}${formatPercent(pct7d, 4)} over ${windowDays.toFixed(1)}d (history < 7d)`;
+            } else {
+                noteElem.textContent = `${direction}${formatPercent(pct7d, 4)} change`;
+            }
         } else {
-            noteElem.textContent = `${direction}${formatPercent(pct7d, 4)} change`;
+            elem.textContent = 'Calculating...';
+            elem.classList.add('text-gray-400');
+            noteElem.textContent = flow.note || '';
         }
-    } else {
-        elem.textContent = 'Calculating...';
-        elem.classList.add('text-gray-400');
-        noteElem.textContent = flow.note || '';
     }
 
     // Days since last redemption — peg-mechanism health signal. thBILL's peg
@@ -261,57 +302,6 @@ function updateNetFlow(flow, supplyHistory, currentSupply) {
             }
         }
     }
-}
-
-function updateWrapperIntegrity(backing) {
-    const container = document.getElementById('wrapper-integrity-panel');
-    if (!container || !backing) return;
-
-    const wrapperBal = backing.ultra_balance_of_wrapper;
-    const mode = backing.tultra_wrapper_backing_mode;
-    const tultraSupply = backing.tultra_supply;
-    const treasuryUltra = backing.treasury_ultra_total || 0;
-    const queueUltra = backing.redemption_queue_ultra_total || 0;
-    const usdc = backing.treasury_usdc || 0;
-    const price = backing.tultra_usd_price;
-
-    const isSynthetic = mode === 'synthetic_attested';
-    const modeBadge = isSynthetic
-        ? '<span class="inline-block px-2 py-0.5 rounded bg-yellow-900/40 text-yellow-300 border border-yellow-700/50 text-xs">synthetic / attested</span>'
-        : '<span class="inline-block px-2 py-0.5 rounded bg-green-900/40 text-green-300 border border-green-700/50 text-xs">custodial</span>';
-
-    const wrapperLine = wrapperBal != null
-        ? `<span class="${wrapperBal < 0.01 ? 'text-yellow-300' : 'text-green-300'} font-mono">${formatNumber(wrapperBal, 2)} ULTRA</span>`
-        : '<span class="text-gray-500">—</span>';
-
-    const theoCustody = treasuryUltra + queueUltra;
-    const gap = tultraSupply - theoCustody;
-    const usdcUltraEquiv = price ? usdc / price : 0;
-    const netGap = gap - usdcUltraEquiv;
-
-    container.innerHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-gray-300">
-            <div class="md:col-span-2 mb-2">Backing model: ${modeBadge}</div>
-            <div>ULTRA.balanceOf(tULTRA wrapper): ${wrapperLine}</div>
-            <div>tULTRA.totalAssets(): <span class="font-mono">${formatNumber(tultraSupply, 2)}</span> <span class="text-gray-500 text-xs">(attested)</span></div>
-            <div>tULTRA.totalSupply(): <span class="font-mono">${formatNumber(tultraSupply, 2)}</span></div>
-            <div>convertToAssets(1): <span class="font-mono">1.0</span> <span class="text-gray-500 text-xs">(no yield accrual via wrapper)</span></div>
-            <div class="md:col-span-2 mt-2 pt-3 border-t border-gray-700">
-                <div class="text-gray-400 text-xs mb-1">Custody cross-check — where the real ULTRA sits:</div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
-                    <div>• Theo treasury (ETH/ARB/SOL): <span class="font-mono">${formatNumber(treasuryUltra, 2)}</span></div>
-                    <div>• UltraManagerFiat in-flight: <span class="font-mono">${formatNumber(queueUltra, 2)}</span></div>
-                    <div>• Theo-custodied total: <span class="font-mono">${formatNumber(theoCustody, 2)}</span> <span class="text-gray-500 text-xs">(${((theoCustody/tultraSupply)*100).toFixed(2)}% of tULTRA)</span></div>
-                    <div>• Gap vs tULTRA supply: <span class="${gap > 0.01 ? 'text-yellow-300' : 'text-green-300'} font-mono">${formatNumber(gap, 2)}</span></div>
-                    <div class="md:col-span-2">• USDC cushion: <span class="font-mono">$${formatNumber(usdc, 0)}</span> ≈ <span class="font-mono">${formatNumber(usdcUltraEquiv, 0)}</span> ULTRA-equivalent at NAV</div>
-                    <div class="md:col-span-2 mt-1">
-                        Net reconciliation: <span class="${Math.abs(netGap) < 100 || netGap < 0 ? 'text-green-300' : 'text-yellow-300'} font-semibold">${netGap < 0 ? 'covered' : `${formatNumber(netGap, 0)} ULTRA short`}</span>
-                        <span class="text-gray-500 text-xs">(treasury + queue + USDC cushion vs tULTRA supply)</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
 }
 
 function updateBackingTable(backing) {
@@ -411,7 +401,6 @@ function updateBackingTable(backing) {
                 <td class="text-right px-5 py-3">${amount}</td>
                 <td class="text-right px-5 py-3 text-gray-400 text-xs">${row.unit || ''}</td>
                 <td class="text-right px-5 py-3">${usdVal}</td>
-                <td class="text-right px-5 py-3">${formatPercent(row.pct)}</td>
             </tr>
         `;
     }).join('');
@@ -427,8 +416,22 @@ function updateTreasuryTable(backing) {
 
     const queueUltra = backing.redemption_queue_ultra_total || 0;
     const treasuryUsdc = backing.treasury_usdc || 0;
+    const wrapperBal = backing.ultra_balance_of_wrapper;
 
-    const rows = [
+    const rows = [];
+
+    // tULTRA wrapper row — surface ULTRA.balanceOf(wrapper) as the first
+    // line so the "synthetic / attested" framing is grounded in a live
+    // data point. Non-zero would flip the whole backing model to custodial.
+    rows.push({
+        chain: 'tULTRA wrapper contract',
+        note: 'ERC-4626 declares asset() = ULTRA; wrapper holds none. See Technical Risk below.',
+        treasury: wrapperBal,
+        usd: usdFor(wrapperBal),
+        isWrapper: true
+    });
+
+    rows.push(
         {
             chain: 'Ethereum',
             treasury: backing.treasury_ultra_ethereum,
@@ -444,7 +447,7 @@ function updateTreasuryTable(backing) {
             treasury: backing.treasury_ultra_solana,
             usd: usdFor(backing.treasury_ultra_solana)
         }
-    ];
+    );
 
     if (treasuryUsdc > 0.01) {
         rows.push({
@@ -454,7 +457,7 @@ function updateTreasuryTable(backing) {
         });
     }
 
-    rows.forEach(r => { r.pct = pctFor(r.usd); });
+    rows.forEach(r => { if (r.pct === undefined) r.pct = pctFor(r.usd); });
 
     // Treasury subtotal (ex-queue) — the "post-settlement floor" ratio that
     // shows up as usd_backing_ratio_ex_queue (88.70% when 15M is in-flight).
@@ -492,6 +495,12 @@ function updateTreasuryTable(backing) {
     const tbody = document.getElementById('treasury-table');
     tbody.innerHTML = rows.map(row => {
         let rowClass = '';
+        if (row.isWrapper) {
+            // Yellow if 0 (synthetic/attested), green if non-zero (custodial)
+            rowClass = (row.treasury && row.treasury > 0.01)
+                ? 'bg-green-900/20 text-green-300'
+                : 'bg-yellow-900/20 text-yellow-300';
+        }
         if (row.isInFlight) rowClass = 'bg-blue-900/20 text-blue-300 italic';
         if (row.isSubtotal) rowClass = 'bg-gray-900/40 text-gray-300 border-t border-gray-700';
         if (row.isTotal) rowClass = 'bg-gray-900 font-medium border-t border-gray-700';
@@ -706,8 +715,23 @@ function updateDefiTable(markets) {
     }
 }
 
-function updatePegStatus(peg) {
+function updatePegStatus(peg, liquidity) {
     if (!peg) return;
+
+    // Build max-TVL-per-chain lookup so we can flag thin pools in the
+    // per-chain table. A chain with only a ~$12K pool isn't a practical
+    // exit route, so surface that inline next to the price.
+    const maxTvlByChain = {};
+    if (liquidity && Array.isArray(liquidity.pools)) {
+        for (const p of liquidity.pools) {
+            const key = (p.chain || '').toLowerCase();
+            const tvl = p.tvl_usd || 0;
+            if (!(key in maxTvlByChain) || tvl > maxTvlByChain[key]) {
+                maxTvlByChain[key] = tvl;
+            }
+        }
+    }
+    const THIN_TVL_THRESHOLD = 50_000;
 
     const navElem = document.getElementById('peg-nav');
     const vwapElem = document.getElementById('peg-vwap');
@@ -768,10 +792,14 @@ function updatePegStatus(peg) {
         const volStr = volume >= 1000000 ? '$' + (volume / 1000000).toFixed(2) + 'M'
             : volume >= 1000 ? '$' + (volume / 1000).toFixed(1) + 'K'
             : '$' + volume.toFixed(0);
+        const chainTvl = maxTvlByChain[chain.toLowerCase()] || 0;
+        const thinTag = (chainTvl > 0 && chainTvl < THIN_TVL_THRESHOLD)
+            ? ` <span class="text-gray-500 text-xs">(thin — not a practical exit route)</span>`
+            : '';
         return `
             <tr class="border-t border-gray-700/50">
                 <td class="px-5 py-3">${chain}</td>
-                <td class="text-right px-5 py-3">$${price.toFixed(4)}</td>
+                <td class="text-right px-5 py-3">$${price.toFixed(4)}${thinTag}</td>
                 <td class="text-right px-5 py-3 text-gray-400">${volStr}</td>
                 <td class="text-right px-5 py-3 ${deviationClass}">${deviationText}</td>
             </tr>
@@ -1026,11 +1054,11 @@ async function fetchAndUpdate() {
         updateLastUpdated(data.timestamp);
         updateTVL(data.tvl_usd);
         updateBackingRatio(data.backing);
+        updatePegDiscountCard(data.peg);
         updateUsdBackingSummary(data.backing);
         updateBackingTable(data.backing);
-        updateWrapperIntegrity(data.backing);
         updateTreasuryTable(data.backing);
-        updatePegStatus(data.peg);
+        updatePegStatus(data.peg, data.secondary_liquidity);
 
         let pegHistory = [];
         try {
