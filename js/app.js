@@ -389,6 +389,9 @@ function updateTreasuryTable(backing) {
     const price = backing.tultra_usd_price;
     const usdFor = (ultra) => (price && ultra != null) ? ultra * price : null;
 
+    const queueUltra = backing.redemption_queue_ultra_total || 0;
+    const totalUltra = (backing.treasury_ultra_total || 0) + queueUltra;
+
     const rows = [
         {
             chain: 'Ethereum',
@@ -410,18 +413,33 @@ function updateTreasuryTable(backing) {
             chain: 'Solana',
             treasury: backing.treasury_ultra_solana,
             usd: usdFor(backing.treasury_ultra_solana)
-        },
-        {
-            chain: 'Total',
-            treasury: backing.treasury_ultra_total,
-            usd: usdFor(backing.treasury_ultra_total),
-            isTotal: true
         }
     ];
 
+    // Libeara's UltraManagerFiat redemption queue — in-flight ULTRA that left
+    // TREASURY but is still Theo backing until epoch settlement.
+    if (queueUltra > 0.01) {
+        rows.push({
+            chain: 'In-flight',
+            note: 'UltraManagerFiat redemption queue',
+            treasury: queueUltra,
+            usd: usdFor(queueUltra),
+            isInFlight: true
+        });
+    }
+
+    rows.push({
+        chain: 'Total',
+        treasury: totalUltra,
+        usd: usdFor(totalUltra),
+        isTotal: true
+    });
+
     const tbody = document.getElementById('treasury-table');
     tbody.innerHTML = rows.map(row => {
-        const rowClass = row.isTotal ? 'bg-gray-900 font-medium border-t border-gray-700' : '';
+        let rowClass = '';
+        if (row.isInFlight) rowClass = 'bg-blue-900/20 text-blue-300 italic';
+        if (row.isTotal) rowClass = 'bg-gray-900 font-medium border-t border-gray-700';
         const treasuryVal = row.treasury !== null ? formatNumber(row.treasury, 2) : '-';
         const usdVal = row.usd !== null && row.usd !== undefined ? '$' + formatNumber(row.usd, 0) : '-';
 
