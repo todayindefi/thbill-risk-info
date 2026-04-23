@@ -267,16 +267,16 @@ function updateBackingTable(backing) {
     if (!backing) return;
 
     const supply = backing.thbill_supply || 1;
+    const nav = backing.thbill_nav_per_share;
+    const tultraPrice = backing.tultra_usd_price;
     const hasTultra = backing.tultra_supply != null;
 
-    // Token-level accounting only. This table shows *token counts* and USDC
-    // balances — not USD-denominated backing. USD backing lives in the
-    // banner + USD summary panel above.
     const rows = [
         {
             asset: 'thBILL Supply',
             amount: supply,
             unit: 'shares',
+            usd: nav ? supply * nav : null,
             pct: 100,
             isSupply: true
         }
@@ -291,6 +291,7 @@ function updateBackingTable(backing) {
                 note: '100% in vault',
                 amount: backing.tultra_supply,
                 unit: 'tULTRA',
+                usd: tultraPrice ? backing.tultra_supply * tultraPrice : null,
                 pct: (backing.tultra_supply / supply) * 100
             });
         } else {
@@ -298,6 +299,7 @@ function updateBackingTable(backing) {
                 asset: 'tULTRA in Vault',
                 amount: backing.tultra_vault_balance,
                 unit: 'tULTRA',
+                usd: tultraPrice ? backing.tultra_vault_balance * tultraPrice : null,
                 pct: (backing.tultra_vault_balance / supply) * 100,
                 isGap: true
             });
@@ -305,26 +307,11 @@ function updateBackingTable(backing) {
                 asset: 'tULTRA Supply',
                 amount: backing.tultra_supply,
                 unit: 'tULTRA',
+                usd: tultraPrice ? backing.tultra_supply * tultraPrice : null,
                 pct: (backing.tultra_supply / supply) * 100,
                 isGap: true
             });
         }
-    }
-
-    // In-flight redemption queue — ULTRA that Theo has moved to Libeara's
-    // UltraManagerFiat for fiat settlement. Not double-counted with treasury
-    // (it left TREASURY to get there), and it's the reason usd_backing_ratio
-    // can temporarily dip between transfer and epoch settlement.
-    const queueUltra = backing.redemption_queue_ultra_total;
-    if (queueUltra && queueUltra > 0.01) {
-        rows.push({
-            asset: 'Redemption Queue',
-            note: 'UltraManagerFiat (in-flight, settles next epoch)',
-            amount: queueUltra,
-            unit: 'ULTRA',
-            pct: (queueUltra / supply) * 100,
-            isInFlight: true
-        });
     }
 
     let defiUsdc = 0;
@@ -336,6 +323,7 @@ function updateBackingTable(backing) {
                 note: `Treasury supply on ${pos.protocol}`,
                 amount: pos.amount,
                 unit: 'USDC',
+                usd: pos.amount,
                 pct: (pos.amount / supply) * 100,
                 isCurrency: true
             });
@@ -349,6 +337,7 @@ function updateBackingTable(backing) {
             note: 'Treasury wallet',
             amount: spotUsdc,
             unit: 'USDC',
+            usd: spotUsdc,
             pct: (spotUsdc / supply) * 100,
             isCurrency: true
         });
@@ -362,6 +351,7 @@ function updateBackingTable(backing) {
         if (row.isSupply) rowClass = 'bg-gray-900 font-bold border-b border-gray-700';
 
         const amount = row.isCurrency ? formatCurrency(row.amount, 2) : formatNumber(row.amount, 2);
+        const usdVal = row.usd !== null && row.usd !== undefined ? '$' + formatNumber(row.usd, 0) : '—';
         const noteSpan = row.note ? `<span class="text-xs text-gray-500 ml-2">(${row.note})</span>` : '';
 
         return `
@@ -369,6 +359,7 @@ function updateBackingTable(backing) {
                 <td class="px-5 py-3">${row.asset}${noteSpan}</td>
                 <td class="text-right px-5 py-3">${amount}</td>
                 <td class="text-right px-5 py-3 text-gray-400 text-xs">${row.unit || ''}</td>
+                <td class="text-right px-5 py-3">${usdVal}</td>
                 <td class="text-right px-5 py-3">${formatPercent(row.pct)}</td>
             </tr>
         `;
@@ -379,10 +370,12 @@ function updateTreasuryTable(backing) {
     if (!backing) return;
 
     const price = backing.tultra_usd_price;
+    const liab = backing.usd_liabilities;
     const usdFor = (ultra) => (price && ultra != null) ? ultra * price : null;
+    const pctFor = (usd) => (liab && usd != null) ? (usd / liab) * 100 : null;
 
     const queueUltra = backing.redemption_queue_ultra_total || 0;
-    const totalUltra = (backing.treasury_ultra_total || 0) + queueUltra;
+    const treasuryUsdc = backing.treasury_usdc || 0;
 
     const rows = [
         {
@@ -396,34 +389,52 @@ function updateTreasuryTable(backing) {
             usd: usdFor(backing.treasury_ultra_arbitrum)
         },
         {
-            chain: 'Avalanche',
-            treasury: backing.treasury_ultra_avalanche,
-            usd: usdFor(backing.treasury_ultra_avalanche),
-            note: backing.treasury_ultra_avalanche === 0 ? 'FundBridge deployment, not in Theo custody' : null
-        },
-        {
             chain: 'Solana',
             treasury: backing.treasury_ultra_solana,
             usd: usdFor(backing.treasury_ultra_solana)
         }
     ];
 
-    // Libeara's UltraManagerFiat redemption queue — in-flight ULTRA that left
-    // TREASURY but is still Theo backing until epoch settlement.
+    if (treasuryUsdc > 0.01) {
+        rows.push({
+            chain: 'USDC (treasury cash)',
+            treasury: null,
+            usd: treasuryUsdc
+        });
+    }
+
+    rows.forEach(r => { r.pct = pctFor(r.usd); });
+
+    // Treasury subtotal (ex-queue) — the "post-settlement floor" ratio that
+    // shows up as usd_backing_ratio_ex_queue (88.70% when 15M is in-flight).
+    const treasurySubtotalUsd = ((backing.treasury_ultra_total || 0) * (price || 0)) + treasuryUsdc;
+    rows.push({
+        chain: 'Treasury subtotal',
+        note: 'ex-queue floor',
+        treasury: null,
+        usd: treasurySubtotalUsd,
+        pct: pctFor(treasurySubtotalUsd),
+        isSubtotal: true
+    });
+
+    // In-flight ULTRA in Libeara's UltraManagerFiat redemption queue.
     if (queueUltra > 0.01) {
         rows.push({
             chain: 'In-flight',
             note: 'UltraManagerFiat redemption queue',
             treasury: queueUltra,
             usd: usdFor(queueUltra),
+            pct: pctFor(usdFor(queueUltra)),
             isInFlight: true
         });
     }
 
+    const totalUsd = treasurySubtotalUsd + (queueUltra * (price || 0));
     rows.push({
         chain: 'Total',
-        treasury: totalUltra,
-        usd: usdFor(totalUltra),
+        treasury: (backing.treasury_ultra_total || 0) + queueUltra,
+        usd: totalUsd,
+        pct: pctFor(totalUsd),
         isTotal: true
     });
 
@@ -431,9 +442,11 @@ function updateTreasuryTable(backing) {
     tbody.innerHTML = rows.map(row => {
         let rowClass = '';
         if (row.isInFlight) rowClass = 'bg-blue-900/20 text-blue-300 italic';
+        if (row.isSubtotal) rowClass = 'bg-gray-900/40 text-gray-300 border-t border-gray-700';
         if (row.isTotal) rowClass = 'bg-gray-900 font-medium border-t border-gray-700';
-        const treasuryVal = row.treasury !== null ? formatNumber(row.treasury, 2) : '-';
-        const usdVal = row.usd !== null && row.usd !== undefined ? '$' + formatNumber(row.usd, 0) : '-';
+        const treasuryVal = row.treasury !== null && row.treasury !== undefined ? formatNumber(row.treasury, 2) : '—';
+        const usdVal = row.usd !== null && row.usd !== undefined ? '$' + formatNumber(row.usd, 0) : '—';
+        const pctVal = row.pct !== null && row.pct !== undefined ? formatPercent(row.pct, 2) : '—';
 
         const chainCell = row.note
             ? `${row.chain}<span class="block text-xs text-gray-500">${row.note}</span>`
@@ -444,6 +457,7 @@ function updateTreasuryTable(backing) {
                 <td class="px-5 py-3">${chainCell}</td>
                 <td class="text-right px-5 py-3">${treasuryVal}</td>
                 <td class="text-right px-5 py-3">${usdVal}</td>
+                <td class="text-right px-5 py-3">${pctVal}</td>
             </tr>
         `;
     }).join('');

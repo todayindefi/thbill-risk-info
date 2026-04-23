@@ -161,16 +161,17 @@
                             <th class="text-left px-5 py-3 text-gray-400 font-medium">Asset</th>
                             <th class="text-right px-5 py-3 text-gray-400 font-medium">Amount</th>
                             <th class="text-right px-5 py-3 text-gray-400 font-medium">Unit</th>
+                            <th class="text-right px-5 py-3 text-gray-400 font-medium">USD Value</th>
                             <th class="text-right px-5 py-3 text-gray-400 font-medium">% of thBILL supply</th>
                         </tr>
                     </thead>
                     <tbody id="backing-table">
-                        <tr><td colspan="4" class="px-5 py-3 text-gray-500">Loading...</td></tr>
+                        <tr><td colspan="5" class="px-5 py-3 text-gray-500">Loading...</td></tr>
                     </tbody>
                 </table>
                 <div class="px-5 py-3 text-xs text-gray-500 border-t border-gray-700">
-                    % column is tokens-per-thBILL-share, not USD backing. See USD backing ratio above
-                    for dollar-denominated coverage.
+                    Direct layer-1 collateral only. Theo's reserves backing the tULTRA (ULTRA custody, in-flight queue,
+                    USDC cushion) are broken out in the Treasury Holdings section below.
                 </div>
             </div>
         </section>
@@ -191,12 +192,13 @@
                     <thead class="bg-gray-900">
                         <tr>
                             <th class="text-left px-5 py-3 text-gray-400 font-medium">Chain</th>
-                            <th class="text-right px-5 py-3 text-gray-400 font-medium">Treasury ULTRA</th>
+                            <th class="text-right px-5 py-3 text-gray-400 font-medium">Amount</th>
                             <th class="text-right px-5 py-3 text-gray-400 font-medium">USD Value</th>
+                            <th class="text-right px-5 py-3 text-gray-400 font-medium">% of Liability</th>
                         </tr>
                     </thead>
                     <tbody id="treasury-table">
-                        <tr><td colspan="3" class="px-5 py-3 text-gray-500">Loading...</td></tr>
+                        <tr><td colspan="4" class="px-5 py-3 text-gray-500">Loading...</td></tr>
                     </tbody>
                 </table>
             </div>
