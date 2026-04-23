@@ -212,10 +212,13 @@ function updatePegDiscountCard(peg) {
     }
     const sign = pd >= 0 ? '+' : '';
     elem.textContent = sign + pd.toFixed(2) + '%';
+    // Thresholds match updatePegStatus() so the same value renders the same
+    // color in Live Metrics and Peg Performance. A 0.5%+ discount on a T-bill
+    // product is genuinely signal-worthy.
     const absPd = Math.abs(pd);
-    if (absPd < 0.5) {
+    if (absPd <= 0.1) {
         elem.classList.add('text-green-400');
-    } else if (absPd < 1.0) {
+    } else if (absPd <= 0.5) {
         elem.classList.add('text-yellow-400');
     } else {
         elem.classList.add('text-red-400');
