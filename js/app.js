@@ -311,14 +311,6 @@ function updateBackingTable(backing) {
         }
     }
 
-    rows.push({
-        asset: 'ULTRA Total',
-        note: 'T-bills across all chains',
-        amount: backing.ultra_total,
-        unit: 'ULTRA',
-        pct: (backing.ultra_total / supply) * 100
-    });
-
     // In-flight redemption queue — ULTRA that Theo has moved to Libeara's
     // UltraManagerFiat for fiat settlement. Not double-counted with treasury
     // (it left TREASURY to get there), and it's the reason usd_backing_ratio
