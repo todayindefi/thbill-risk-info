@@ -386,37 +386,35 @@ function updateBackingTable(backing) {
 function updateTreasuryTable(backing) {
     if (!backing) return;
 
+    const price = backing.tultra_usd_price;
+    const usdFor = (ultra) => (price && ultra != null) ? ultra * price : null;
+
     const rows = [
         {
             chain: 'Ethereum',
             treasury: backing.treasury_ultra_ethereum,
-            supply: backing.ultra_ethereum,
-            coverage: backing.ultra_ethereum ? (backing.treasury_ultra_ethereum / backing.ultra_ethereum) * 100 : 0
+            usd: usdFor(backing.treasury_ultra_ethereum)
         },
         {
             chain: 'Arbitrum',
             treasury: backing.treasury_ultra_arbitrum,
-            supply: backing.ultra_arbitrum,
-            coverage: backing.ultra_arbitrum ? (backing.treasury_ultra_arbitrum / backing.ultra_arbitrum) * 100 : 0
+            usd: usdFor(backing.treasury_ultra_arbitrum)
         },
         {
             chain: 'Avalanche',
             treasury: backing.treasury_ultra_avalanche,
-            supply: backing.ultra_avalanche,
-            coverage: backing.ultra_avalanche ? (backing.treasury_ultra_avalanche / backing.ultra_avalanche) * 100 : 0,
+            usd: usdFor(backing.treasury_ultra_avalanche),
             note: backing.treasury_ultra_avalanche === 0 ? 'FundBridge deployment, not in Theo custody' : null
         },
         {
             chain: 'Solana',
             treasury: backing.treasury_ultra_solana,
-            supply: backing.ultra_solana,
-            coverage: backing.ultra_solana ? (backing.treasury_ultra_solana / backing.ultra_solana) * 100 : 0
+            usd: usdFor(backing.treasury_ultra_solana)
         },
         {
             chain: 'Total',
             treasury: backing.treasury_ultra_total,
-            supply: backing.ultra_total,
-            coverage: backing.ultra_total ? (backing.treasury_ultra_total / backing.ultra_total) * 100 : 0,
+            usd: usdFor(backing.treasury_ultra_total),
             isTotal: true
         }
     ];
@@ -424,8 +422,8 @@ function updateTreasuryTable(backing) {
     const tbody = document.getElementById('treasury-table');
     tbody.innerHTML = rows.map(row => {
         const rowClass = row.isTotal ? 'bg-gray-900 font-medium border-t border-gray-700' : '';
-        const treasuryVal = row.treasury !== null ? formatNumber(row.treasury, 2) : (row.note || '-');
-        const coverageVal = row.coverage !== null ? formatPercent(row.coverage, 1) : '-';
+        const treasuryVal = row.treasury !== null ? formatNumber(row.treasury, 2) : '-';
+        const usdVal = row.usd !== null && row.usd !== undefined ? '$' + formatNumber(row.usd, 0) : '-';
 
         const chainCell = row.note
             ? `${row.chain}<span class="block text-xs text-gray-500">${row.note}</span>`
@@ -435,8 +433,7 @@ function updateTreasuryTable(backing) {
             <tr class="${rowClass}">
                 <td class="px-5 py-3">${chainCell}</td>
                 <td class="text-right px-5 py-3">${treasuryVal}</td>
-                <td class="text-right px-5 py-3">${formatNumber(row.supply, 2)}</td>
-                <td class="text-right px-5 py-3">${coverageVal}</td>
+                <td class="text-right px-5 py-3">${usdVal}</td>
             </tr>
         `;
     }).join('');
