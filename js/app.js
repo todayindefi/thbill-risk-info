@@ -134,6 +134,74 @@ function updateUsdBackingSummary(backing) {
             </div>`;
     }
 
+    // Flow B (Libeara fund reconciliation) badge — appears only when Stage B
+    // is mid-cycle. Phase 1: ULTRA still in queue. Phase 2: ULTRA burned,
+    // waiting for Libeara USDC settlement to land at TREASURY (T+1 to T+7d
+    // historically). Color: blue (normal), yellow (past T+7d expected window),
+    // red (past T+14d, materially delayed).
+    let flowBBadgeLine = '';
+    const hoursSinceBurn = backing.hours_since_last_burn;
+    const expectedByIso  = backing.settlement_expected_by_iso;
+    const lastBurnIso    = backing.last_flow_b_burn_iso;
+    const lastBurnAmt    = backing.last_flow_b_burn_amount_ultra;
+    const SAFE_LINK   = '<a href="https://etherscan.io/address/0x7ee29373f075ee1d83b1b93b4fe94ae242df5178" target="_blank" class="hover:underline">0x7ee29373f0…</a>';
+    const ULTRAMGR_LINK = '<a href="https://etherscan.io/address/0x9056777ad890ece386d646a5c698a9a6a779000b" target="_blank" class="hover:underline">0x9056777ad…</a>';
+
+    if (queueUltra && queueUltra > 0.01) {
+        // Phase 1 — queue active
+        const queueM = (queueUltra / 1e6).toFixed(2);
+        flowBBadgeLine = `
+            <div class="md:col-span-2 mb-3 pb-3 border-b border-gray-700">
+                <span class="inline-block px-2 py-0.5 rounded bg-blue-900/40 text-blue-300 border border-blue-700/50 text-xs font-semibold">Flow B · queue phase</span>
+                <div class="text-xs text-gray-400 mt-1">
+                    Fund reconciliation in progress. Theo has moved <span class="text-white">${queueM}M ULTRA</span> into Libeara's UltraManagerFiat queue to settle a batch of user redemptions.
+                    ULTRA typically burns within 5–27 hours; USDC then returns to Theo's treasury at T+1 to T+7 days. The
+                    ex-queue backing ratio below reflects the post-burn state; the headline ratio includes the queue as Theo-custodied until burn.
+                </div>
+            </div>`;
+    } else if (hoursSinceBurn !== null && hoursSinceBurn !== undefined && lastBurnIso && expectedByIso) {
+        // Phase 2 — burn done, USDC pending
+        const expectedTs = Date.parse(expectedByIso);
+        const lastBurnTs = Date.parse(lastBurnIso);
+        const nowTs      = Date.now();
+        const hoursPastExpected = (nowTs - expectedTs) / (3600 * 1000);
+
+        let badgeColor   = 'bg-blue-900/40 text-blue-300 border-blue-700/50';
+        let badgeText    = 'Flow B · awaiting USDC settlement';
+        let bodyTone     = 'text-gray-400';
+        let extraNotice  = '';
+        if (hoursPastExpected > 7 * 24) {
+            // Past T+14d total — red alert
+            badgeColor  = 'bg-red-900/40 text-red-300 border-red-700/50';
+            badgeText   = 'Flow B · materially delayed';
+            bodyTone    = 'text-red-300';
+            extraNotice = `<br><strong>Settlement now &gt;T+14 days past burn.</strong> Potential operational or counterparty issue; warrants escalation.`;
+        } else if (hoursPastExpected > 0) {
+            // Past T+7d but within T+14 — yellow warning
+            badgeColor  = 'bg-yellow-900/40 text-yellow-300 border-yellow-700/50';
+            badgeText   = 'Flow B · running long';
+            bodyTone    = 'text-yellow-200';
+            extraNotice = `<br><strong>Settlement running longer than the T+7d historical norm.</strong> Monitor; recovers when USDC lands.`;
+        }
+
+        const burnAmtM = lastBurnAmt ? (lastBurnAmt / 1e6).toFixed(1) : '?';
+        const burnDate = lastBurnIso.slice(0, 10);
+        const expectedDate = expectedByIso.slice(0, 10);
+        const hoursSinceFmt = hoursSinceBurn.toFixed(1);
+
+        flowBBadgeLine = `
+            <div class="md:col-span-2 mb-3 pb-3 border-b border-gray-700">
+                <span class="inline-block px-2 py-0.5 rounded ${badgeColor} border text-xs font-semibold">${badgeText}</span>
+                <div class="text-xs ${bodyTone} mt-1">
+                    Fund reconciliation in progress. <span class="text-white">${burnAmtM}M ULTRA</span>
+                    was burned <span class="text-white">${hoursSinceFmt}h ago</span> (${burnDate});
+                    USDC is expected to arrive at Theo's treasury by <span class="text-white">${expectedDate}</span>,
+                    historically from a Libeara operational Safe (${SAFE_LINK}) or the UltraManager contract (${ULTRAMGR_LINK}).
+                    The backing ratio dip is expected and time-bounded; it will recover when USDC lands.${extraNotice}
+                </div>
+            </div>`;
+    }
+
     const isCircular = priceSource === 'vault_implied_circular';
     const isOnchain = priceSource === 'onchain_ultramanager';
 
@@ -188,6 +256,7 @@ function updateUsdBackingSummary(backing) {
     container.innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1 text-gray-300">
             ${modeBadgeLine}
+            ${flowBBadgeLine}
             <div>thBILL NAV: <span class="text-white">${nav ? '$' + nav.toFixed(6) : '-'}</span> <span class="text-gray-500">(USDC/share)</span></div>
             <div>thBILL supply: <span class="text-white">${formatNumber(supply, 0)}</span></div>
             <div>USD liabilities: <span class="text-white">${liab ? '$' + formatNumber(liab, 0) : '-'}</span></div>
