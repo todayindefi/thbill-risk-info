@@ -12,11 +12,11 @@ On-chain RPCs + APIs          PegTracker (this server)         GitHub Pages
 
 Ethereum RPC ──┐
 Arbitrum RPC ──┤               thbill_metrics.py
-Solana RPC ────┤    ──►        (cron: every hour at :20)
-DefiLlama API ─┤               │
-CoinGecko API ─┤               ├─► data/thbill_metrics.json
-Theo dashboard ┘               └─► data/thbill_peg_history.json
-                                         │
+Avalanche RPC ─┤               (cron: every hour at :20)
+Solana RPC ────┤    ──►        │
+DefiLlama API ─┤               ├─► data/thbill_metrics.json
+CoinGecko API ─┤               └─► data/thbill_peg_history.json
+DeBank API ────┘                         │
                                          │  sync_and_push.sh
                                          │  (cron: every hour at :25)
                                          ▼
@@ -29,6 +29,8 @@ Theo dashboard ┘               └─► data/thbill_peg_history.json
 ```
 
 Total latency from on-chain → live dashboard: ~10 minutes.
+
+See [`docs/`](docs/) for dashboard section reference and JSON schema.
 
 ## Cross-Repo Architecture
 
@@ -45,13 +47,14 @@ This dashboard spans two repos on the same server:
 
 **What `thbill_metrics.py` collects:**
 
-- **Backing ratio** — On-chain RPC: ULTRA supply (Ethereum/Arbitrum/Solana), tULTRA supply, Treasury ULTRA + USDC balances, implied cash (tULTRA − ULTRA)
+- **Backing ratio (USD-denominated, authoritative)** — On-chain RPC: ULTRA supply across ETH/ARB/AVAX/SOL, tULTRA supply, `balanceOf(thBILL vault)`, Theo TREASURY custody per chain, treasury USDC, UltraManagerFiat in-flight queue, `ULTRA.balanceOf(tULTRA wrapper)` (expected 0 — synthetic/attested model probe)
+- **NAV** — Libeara-attested ULTRA NAV from `UltraManager.lastSetMintExchangeRate()` (primary), with `tULTRA.convertToAssets(1)` wrapper rate and Theo vault-implied price as cross-checks (drift tagged as `theo_nav_drift_pct`)
 - **TVL** — DefiLlama `/protocol/theo-network-thbill`
-- **Liquidity** — CoinGecko tickers + on-chain 2% depth (Uniswap V3 QuoterV2 binary search)
-- **Peg** — ERC-4626 `convertToAssets()` for NAV, volume-weighted DEX price for VWAP
+- **Liquidity** — CoinGecko tickers + on-chain 2% depth via Uniswap V3 QuoterV2 binary search; per-pool TVL & volume
+- **Peg** — ERC-4626 `convertToAssets()` for share NAV, volume-weighted DEX price for VWAP, per-chain price/volume/premium
 - **DeFi markets** — DefiLlama yields API (Pendle, Morpho, Euler, etc.)
-- **Theo reported** — Playwright headless scrape of `app.theo.xyz/dashboard`
-- **Redemption flow** — 24h supply delta from `thbill_history.json`
+- **Treasury DeFi positions** — DeBank API on the TREASURY wallet (catches e.g. Aave USDC supply if present)
+- **Redemption flow** — 24h supply delta + "days since last redemption" scanner over ERC-20 Transfer-to-zero events on the thBILL vault, with lifetime backfill available via `backfill_thbill_history.py`
 
 ### `~/thbill-risk-info/` — Dashboard (this repo, public)
 
@@ -83,15 +86,20 @@ All times are server-local. Staggered to avoid API rate limits.
 
 ## Dashboard Sections
 
-| Section | Data source | Key fields |
+Full section-by-section reference in [`docs/dashboard.md`](docs/dashboard.md). Quick index:
+
+| Section | Data source | What it shows |
 |---------|-------------|------------|
-| Live Metrics | `tvl_usd`, `backing`, `redemption_flow` | TVL, backing ratio, 24h flow |
-| Collateral & Backing | `backing` | thBILL → tULTRA → ULTRA waterfall, implied cash |
-| Treasury Holdings | `backing.treasury_ultra_*` | Per-chain Treasury ULTRA vs ULTRA supply |
-| Theo Reported | `theo_reported`, `backing.implied_cash` | Money market %, cash %, implied vs reported comparison |
-| Peg Performance | `peg` | NAV, VWAP, premium/discount, per-chain prices |
-| Secondary Liquidity | `secondary_liquidity.pools` | DEX pools: TVL, 2% depth, volume, spread |
-| DeFi Integrations | `defi_markets` | Protocol, chain, TVL, APY |
+| Executive Summary | static HTML | Who can primary-redeem vs DEX-only; two-layer transparency framing |
+| Overall Risk Assessment | static HTML | 5-star rating cards (Collateral, Liquidity, Issuer, Operational, Transparency) |
+| Live Metrics | `tvl_usd`, `backing`, `peg`, `redemption_flow` | TVL · USD backing ratio · Peg Discount (color-coded) · Days Since Last Redemption |
+| Collateral & Backing | `backing` | thBILL liability + tULTRA collateral + USDC cushion (USD values). Headline USD backing ratio + synthetic/attested badge |
+| Treasury Holdings | `backing.treasury_ultra_*`, `backing.redemption_queue_ultra_*`, `backing.ultra_balance_of_wrapper`, `backing.treasury_usdc` | tULTRA wrapper row + per-chain custody + USDC + in-flight queue. Columns: Amount, USD Value, % of thBILL Liability |
+| Redemption Mechanics | static HTML | Primary path (KYC, 4-business-day, $50K min) vs DEX path |
+| Peg Performance | `peg` | NAV · VWAP · premium/discount · 7d history chart · per-chain table with thin-pool flags |
+| Secondary Market Liquidity | `secondary_liquidity.pools` | Per-pool TVL, 2% depth, volume, spread |
+| Risk Analysis | static HTML | Issuer, Decentralization, Technical, Minting & Redemption, Operational |
+| Where to Use thBILL (tab) | `defi_markets` | Integration breadth (Pendle, Morpho, Euler, etc.) |
 
 ## Local Development
 
