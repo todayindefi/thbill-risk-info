@@ -277,32 +277,57 @@ function updateNetFlow(flow, supplyHistory, currentSupply) {
         }
     }
 
-    // Days since last redemption — peg-mechanism health signal. thBILL's peg
-    // is maintained by redemption arb; if no one's redeeming, the discount
-    // can drift without correction.
+    // Days since last USER redemption (thBILL → operator) — the live pulse.
+    // Distinct from batch burn, which can lag user activity by weeks because
+    // Theo consolidates received thBILL into periodic burn transactions.
     const daysElem = document.getElementById('days-since-redemption');
     const daysNoteElem = document.getElementById('days-since-redemption-note');
-    if (daysElem && flow.days_since_last_redemption !== undefined && flow.days_since_last_redemption !== null) {
-        const days = flow.days_since_last_redemption;
-        const hasExact = flow.last_redemption_timestamp !== null && flow.last_redemption_timestamp !== undefined;
-        daysElem.textContent = (hasExact ? '' : '≥') + days.toFixed(1) + 'd';
-        daysElem.classList.remove('text-green-400', 'text-yellow-400', 'text-red-400', 'text-gray-400');
-        if (days < 7) daysElem.classList.add('text-green-400');
-        else if (days < 30) daysElem.classList.add('text-yellow-400');
-        else daysElem.classList.add('text-red-400');
+    const batchNoteElem = document.getElementById('batch-burn-note');
 
-        if (daysNoteElem) {
-            if (hasExact) {
-                const amt = flow.last_redemption_amount_thbill;
-                const ts = flow.last_redemption_timestamp ? flow.last_redemption_timestamp.slice(0, 10) : '?';
-                const txShort = flow.last_redemption_tx ? flow.last_redemption_tx.slice(0, 10) + '…' : '';
-                const txLink = flow.last_redemption_tx
-                    ? ` <a href="https://etherscan.io/tx/${flow.last_redemption_tx}" target="_blank" class="text-blue-400 hover:underline">${txShort}</a>`
-                    : '';
-                daysNoteElem.innerHTML = `last: ${formatNumber(amt, 0)} thBILL on ${ts}${txLink}`;
-            } else {
-                daysNoteElem.innerHTML = '<span class="text-yellow-300">No burns in ~35d scan window</span> <span class="text-gray-500">— peg arb inactive</span>';
+    if (daysElem) {
+        const userDays = flow.days_since_last_user_redemption;
+        const userTs   = flow.last_user_redemption_timestamp;
+        const userAmt  = flow.last_user_redemption_amount_thbill;
+        const userTx   = flow.last_user_redemption_tx;
+        const userFrom = flow.last_user_redemption_from;
+
+        if (userDays !== undefined && userDays !== null) {
+            const hasExact = userTs !== null && userTs !== undefined;
+            daysElem.textContent = (hasExact ? '' : '≥') + userDays.toFixed(1) + 'd';
+            daysElem.classList.remove('text-green-400', 'text-yellow-400', 'text-red-400', 'text-gray-400');
+            if (userDays < 7) daysElem.classList.add('text-green-400');
+            else if (userDays < 30) daysElem.classList.add('text-yellow-400');
+            else daysElem.classList.add('text-red-400');
+
+            if (daysNoteElem) {
+                if (hasExact) {
+                    const dateStr = userTs ? userTs.slice(0, 10) : '?';
+                    const txShort = userTx ? userTx.slice(0, 10) + '…' : '';
+                    const txLink = userTx
+                        ? ` <a href="https://etherscan.io/tx/${userTx}" target="_blank" class="text-blue-400 hover:underline">${txShort}</a>`
+                        : '';
+                    const userShort = userFrom ? userFrom.slice(0, 10) + '…' : '';
+                    daysNoteElem.innerHTML = `last: ${formatNumber(userAmt, 0)} thBILL from ${userShort} on ${dateStr}${txLink}`;
+                } else {
+                    daysNoteElem.innerHTML = '<span class="text-yellow-300">No user redemptions in scan window</span>';
+                }
             }
+        }
+
+        // Supplementary line: batch-burn cadence (operator's consolidated burn,
+        // which typically lags user activity by weeks). Same source fields as
+        // before; the semantic meaning of the legacy fields shifted from "last
+        // redemption" to "last batch burn".
+        if (batchNoteElem && flow.days_since_last_redemption !== undefined && flow.days_since_last_redemption !== null) {
+            const burnDays = flow.days_since_last_redemption;
+            const burnTs   = flow.last_redemption_timestamp;
+            const burnTx   = flow.last_redemption_tx;
+            const hasExact = burnTs !== null && burnTs !== undefined;
+            const txLink = hasExact && burnTx
+                ? ` <a href="https://etherscan.io/tx/${burnTx}" target="_blank" class="text-blue-400 hover:underline">${burnTx.slice(0, 10)}…</a>`
+                : '';
+            const dateStr = hasExact ? burnTs.slice(0, 10) : `(>${burnDays.toFixed(1)}d ago)`;
+            batchNoteElem.innerHTML = `<span class="text-gray-500">Batch burn (reconciliation cycle): ${burnDays.toFixed(1)}d ago — ${dateStr}${txLink}</span>`;
         }
     }
 }
@@ -452,11 +477,36 @@ function updateTreasuryTable(backing) {
         }
     );
 
-    if (treasuryUsdc > 0.01) {
+    // Split the reported treasury_usdc total (spot + Aave eth + other DeFi)
+    // into its components so readers can see where the USDC actually sits.
+    const aaveEthUsdc = backing.treasury_aave_usdc_ethereum || 0;
+    const debankDefiSum = (backing.treasury_defi_positions || [])
+        .reduce((sum, pos) => sum + (pos.amount || 0), 0);
+    const spotUsdc = treasuryUsdc - aaveEthUsdc - debankDefiSum;
+
+    if (spotUsdc > 0.01) {
         rows.push({
             chain: 'USDC (treasury cash)',
             treasury: null,
-            usd: treasuryUsdc
+            usd: spotUsdc
+        });
+    }
+    if (aaveEthUsdc > 0.01) {
+        rows.push({
+            chain: 'USDC (Aave V3 Ethereum)',
+            note: 'supplied for yield; aEthUSDC.balanceOf',
+            treasury: null,
+            usd: aaveEthUsdc
+        });
+    }
+    // Any other DeFi USDC positions surfaced by DeBank (non-Aave-ETH)
+    for (const pos of (backing.treasury_defi_positions || [])) {
+        if ((pos.amount || 0) < 0.01) continue;
+        rows.push({
+            chain: `USDC (${pos.protocol})`,
+            note: `${pos.chain} — via DeBank`,
+            treasury: null,
+            usd: pos.amount
         });
     }
 
