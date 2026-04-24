@@ -71,6 +71,13 @@ function updateBackingRatio(backing) {
     const isCircular = priceSource === 'vault_implied_circular';
     const isOnchain = priceSource === 'onchain_ultramanager';
     const epoch = backing.ultra_onchain_nav_epoch;
+    const receivable = backing.libeara_receivable_usd_estimate;
+    // Amend the subtitle with "(+ Libeara receivable)" only while Stage B is
+    // mid-cycle with an outstanding USDC payment. See detail panel for the
+    // economic / on-chain / floor tier breakdown.
+    const receivableAmend = (receivable && receivable > 0.01)
+        ? ' <span class="text-blue-300">(+ Libeara receivable)</span>'
+        : '';
 
     if (ratio !== null && ratio !== undefined) {
         elem.textContent = formatPercent(ratio * 100);
@@ -82,11 +89,11 @@ function updateBackingRatio(backing) {
         else elem.classList.add('text-red-400');
         if (noteElem) {
             if (isCircular) {
-                noteElem.innerHTML = '<span class="text-yellow-300">Theo-reported (circular)</span> <span class="text-gray-500">— tULTRA priced at vault-implied NAV, not independently verified</span>';
+                noteElem.innerHTML = '<span class="text-yellow-300">Theo-reported (circular)</span> <span class="text-gray-500">— tULTRA priced at vault-implied NAV, not independently verified</span>' + receivableAmend;
             } else if (isOnchain) {
-                noteElem.innerHTML = `<span class="text-green-300">Libeara on-chain NAV</span> <span class="text-gray-500">— daily T-bill NAV published by Libeara${epoch ? ' (epoch ' + epoch + ')' : ''}</span>`;
+                noteElem.innerHTML = `<span class="text-green-300">Libeara on-chain NAV</span> <span class="text-gray-500">— daily T-bill NAV published by Libeara${epoch ? ' (epoch ' + epoch + ')' : ''}</span>` + receivableAmend;
             } else {
-                noteElem.innerHTML = `tULTRA price from ${priceSource}`;
+                noteElem.innerHTML = `tULTRA price from ${priceSource}` + receivableAmend;
             }
         }
     } else {
@@ -107,6 +114,8 @@ function updateUsdBackingSummary(backing) {
     const liab = backing.usd_liabilities;
     const assets = backing.usd_assets;
     const ratio = backing.usd_backing_ratio;
+    const ratioOnChain = backing.usd_backing_ratio_on_chain;
+    const ratioFloor = backing.usd_backing_ratio_floor;
     const ratioExQueue = backing.usd_backing_ratio_ex_queue;
     const queueUltra = backing.redemption_queue_ultra_total;
     const price = backing.tultra_usd_price;
@@ -240,6 +249,21 @@ function updateUsdBackingSummary(backing) {
         ? `<span class="${isCircular ? 'text-yellow-300' : 'text-white'} font-semibold">${formatPercent(ratio * 100)}</span>${isCircular ? ' <span class="text-gray-500 text-xs">(Theo-reported, not independently verified)</span>' : ''}`
         : '<span class="text-yellow-300 font-semibold">indeterminate</span>';
 
+    // Three-tier ratio detail — shown only when the values diverge (i.e. during
+    // a Flow B cycle). Phase 1: queue active → on-chain > floor. Phase 2:
+    // burned, USDC pending → economic > on-chain == floor. Steady state all
+    // three collapse to one value; secondary lines suppressed.
+    let ratioTierLines = '';
+    const diverges = (ratio !== null && ratio !== undefined
+        && ratioOnChain !== null && ratioOnChain !== undefined
+        && ratioFloor !== null && ratioFloor !== undefined
+        && (Math.abs(ratio - ratioOnChain) >= 0.001 || Math.abs(ratioOnChain - ratioFloor) >= 0.001));
+    if (diverges) {
+        ratioTierLines = `
+            <div class="md:col-span-2 text-xs text-gray-400 italic">↳ on-chain verified: <span class="text-gray-300 not-italic">${formatPercent(ratioOnChain * 100)}</span> <span class="text-gray-500">(excludes in-flight Libeara receivable)</span></div>
+            <div class="md:col-span-2 text-xs text-gray-400 italic">↳ post-settlement floor: <span class="text-gray-300 not-italic">${formatPercent(ratioFloor * 100)}</span> <span class="text-gray-500">(treasury custody + USDC only)</span></div>`;
+    }
+
     // In-flight redemption queue: ULTRA in Libeara's UltraManagerFiat, waiting for
     // the next settlement epoch. Shown as supplementary context — already counted
     // in usd_assets/usd_backing_ratio. The ex-queue ratio is the post-settlement
@@ -265,6 +289,7 @@ function updateUsdBackingSummary(backing) {
             <div class="md:col-span-2 mt-1">tULTRA USD price: ${priceLine}</div>
             ${navDetailLine}
             <div class="md:col-span-2 mt-1">USD backing ratio: ${ratioLine}</div>
+            ${ratioTierLines}
             ${queueLine}
         </div>
     `;

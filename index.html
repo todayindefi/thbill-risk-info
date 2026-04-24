@@ -56,39 +56,57 @@
             <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
                 <h2 class="text-xl font-semibold mb-4 text-white">Executive Summary</h2>
                 <p class="text-gray-300 leading-relaxed mb-4">
-                    <strong>thBILL</strong> is Theo Network's tokenized US Treasury bill exposure — roughly
-                    $135M in TVL across Ethereum, Arbitrum, Avalanche, and Solana. Each share represents Libeara's
-                    ULTRA T-bill token held in Theo's treasury, wrapped via tULTRA.
+                    <strong>thBILL</strong> is Theo Network's wrapper over a
+                    <strong>Standard Chartered Libeara tokenized US T-bill fund</strong>
+                    (Wellington Management sub-advisor, FundBridge MAS-regulated administrator).
+                    ~$135M TVL across Ethereum, Arbitrum, and Solana via LayerZero OFT. NAV
+                    accrues T-bill yield (~3% APY) with no rebase. Each share is a claim on
+                    Libeara's ULTRA token, wrapped via tULTRA and held in Theo's treasury.
                 </p>
                 <ul class="text-gray-300 leading-relaxed space-y-2 list-disc pl-5">
                     <li>
-                        <strong>Who this applies to.</strong> If you have KYC with Theo + Libeara,
-                        your exit is primary redemption at NAV (~4 business days, $50K min).
-                        <strong class="text-yellow-300">If not, you cannot primary-redeem at all</strong>
-                        — your only path out is selling on a DEX, at the prevailing peg discount
-                        and subject to pool depth. That makes <strong>Peg Performance</strong>
-                        and <strong>Secondary Market Liquidity</strong> the two most important
-                        sections on this page for non-KYC holders: they determine your actual
-                        exit cost and maximum exit size. The headline Peg Discount in Live
-                        Metrics is the top-of-page version of that number.
+                        <strong class="text-yellow-300">If you're non-KYC, peg and liquidity are your world.</strong>
+                        KYC'd holders redeem at NAV through Theo → Libeara → USDC
+                        (T+4 business days, $50K min). Everyone else <strong>cannot primary-redeem at all</strong>
+                        — the only exit is a DEX sale at the prevailing peg discount, subject
+                        to pool depth. That makes <strong>Peg Performance</strong> and
+                        <strong>Secondary Market Liquidity</strong> the two sections non-KYC
+                        readers should prioritize; the <strong>Peg Discount</strong> card in
+                        Live Metrics is the live exit-cost number. Empirical non-KYC exit cost
+                        runs ~30–50 bps below NAV on the largest pools; larger sizes slip faster.
                     </li>
                     <li>
-                        <strong>Backing has two transparency layers.</strong> <em>NAV</em> is strong:
-                        Libeara posts the daily ULTRA NAV to a public on-chain contract
-                        (UltraManager.lastSetMintExchangeRate), signed by Libeara's admin key.
-                        <em>Custody</em> is attested: the tULTRA wrapper is a synthetic ERC-4626
-                        that holds zero ULTRA — the 129.46M tULTRA outstanding is backed by
-                        ULTRA that Theo custodies in a separately-disclosed treasury wallet plus
-                        USDC earmarked to mint ULTRA shares. The backing ratio shown below is a
-                        reconciliation against Theo's disclosed treasury, not a property enforced
-                        by the wrapper contract. See the Collateral & Backing and Treasury Holdings
-                        sections for the full breakdown.
+                        <strong>Underlying T-bills are strong; wrapper contracts are not contract-enforced.</strong>
+                        The T-bills themselves are institutional-grade (Wellington-managed,
+                        Standard Chartered-custodied, AAA-rated by S&amp;P and Particula). But
+                        thBILL → tULTRA and tULTRA → ULTRA are both synthetic ERC-4626 layers
+                        that hold zero of the asset they declare; backing is reconciled against
+                        Theo's treasury custody + Libeara's settlement pipeline, not enforced
+                        by the contracts. NAV is verifiable on-chain (Libeara-signed daily);
+                        custody is attested (TREASURY wallet readable, but the "complete set"
+                        claim relies on Theo's disclosure being accurate). See
+                        <strong>Collateral &amp; Backing</strong> and <strong>Treasury Holdings</strong>
+                        for the full breakdown.
                     </li>
                     <li>
-                        <strong>Main risk is centralization.</strong> Minting, redemption, and treasury
-                        management are Theo-controlled, with Libeara as the ULTRA tokenization partner.
-                        No independent auditor or custodian attestations are published — the on-chain NAV
-                        write is the primary transparency mechanism.
+                        <strong>Redemption runs as a two-stage pipeline with cyclical backing-ratio dips.</strong>
+                        <em>Stage A:</em> users redeem off-chain via Theo's MPC continuously.
+                        <em>Stage B:</em> Theo batches accumulated burns every 30–100 days,
+                        triggering Libeara to settle the fund and wire USDC back within
+                        T+1 to T+7 business days. During the 1–7 day settlement window, ~10–15%
+                        of backing briefly sits off-chain as a Libeara receivable; three backing
+                        tiers (economic / on-chain verified / post-settlement floor) are tracked
+                        so this shows up as a visible cycle, not as undercollateralization.
+                        <strong>Reconciliation Activity</strong> tracks current and historical cycles.
+                    </li>
+                    <li>
+                        <strong>Main issuer risk is centralization.</strong> Theo Protocol
+                        Corporation is Panama-registered and non-regulated. Minting, redemption,
+                        and treasury are MPC-controlled; both thBILL and tULTRA are
+                        UUPS-upgradeable with no timelock. Libeara is a separate Standard Chartered
+                        subsidiary providing the underlying fund — not merged with Theo. A single
+                        Zenith audit exists but isn't publicly linked. Detail in
+                        <strong>Risk Analysis</strong> below.
                     </li>
                 </ul>
             </div>
@@ -140,7 +158,7 @@
                 <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
                     <div class="text-sm text-gray-400 mb-1">USD Backing Ratio</div>
                     <div class="text-2xl font-bold" id="backing-ratio">-</div>
-                    <div class="text-xs text-gray-500 mt-2" id="backing-ratio-note">Theo treasury custody + in-flight queue + USDC ÷ thBILL liability (reconciliation, not wrapper-held)</div>
+                    <div class="text-xs text-gray-500 mt-2" id="backing-ratio-note">Economic backing: Theo custody + in-flight queue + USDC + any pending Libeara receivable ÷ thBILL liability. On-chain-only and floor views in detail panel.</div>
                 </div>
                 <!-- Peg Discount (retail's actual exit cost when primary redemption is KYC-gated) -->
                 <a href="#peg-performance" class="bg-gray-800 rounded-lg p-5 border border-gray-700 block hover:border-gray-600 transition">
