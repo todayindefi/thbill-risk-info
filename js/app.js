@@ -7,6 +7,7 @@
 const METRICS_URL = 'data/thbill_metrics.json';
 const PEG_HISTORY_URL = 'data/thbill_peg_history.json';
 const SUPPLY_HISTORY_URL = 'data/thbill_history.json';
+const FLOW_B_CYCLES_URL = 'data/thbill_flow_b_cycles.json';
 
 // Utility functions
 function formatNumber(num, decimals = 0) {
@@ -579,19 +580,67 @@ function updateTreasuryTable(backing) {
         });
     }
 
+    // Libeara USDC receivable (in-flight). Only appears when a Flow B burn
+    // has occurred but Libeara's USDC payout hasn't yet landed at TREASURY.
+    // Same blue italic treatment as the queue in-flight row, same
+    // semantic: "value exists but not cash in hand yet."
+    const receivableUsd = backing.libeara_receivable_usd_estimate;
+    const flowBCurrent = backing.flow_b_current || {};
+    if (receivableUsd && receivableUsd > 1) {
+        const burnTsDate = flowBCurrent.burn_ts ? flowBCurrent.burn_ts.slice(0, 10) : '?';
+        const expectedDate = flowBCurrent.settlement_expected_by ? flowBCurrent.settlement_expected_by.slice(0, 10) : '?';
+        const burnAmtM = flowBCurrent.burn_ultra_amount ? (flowBCurrent.burn_ultra_amount / 1e6).toFixed(1) : '?';
+        const senders = backing.libeara_payout_sources || [];
+        const senderLinks = senders.slice(0, 2).map(s =>
+            `<a href="https://etherscan.io/address/${s.address}" target="_blank" class="hover:underline">${s.address.slice(0,10)}…</a>`
+        ).join(' or ');
+        rows.push({
+            chain: 'Libeara USDC receivable (in-flight)',
+            note: `${burnAmtM}M ULTRA burned ${burnTsDate}; expected by ${expectedDate} from ${senderLinks || 'Safe / UltraManager'}`,
+            treasury: null,
+            usd: receivableUsd,
+            pct: pctFor(receivableUsd),
+            isInFlight: true
+        });
+    }
+
     rows.forEach(r => { if (r.pct === undefined) r.pct = pctFor(r.usd); });
 
-    // Treasury subtotal (ex-queue) — the "post-settlement floor" ratio that
-    // shows up as usd_backing_ratio_ex_queue (88.70% when 15M is in-flight).
+    // Treasury subtotals. The "on-chain verified only" subtotal is the
+    // post-settlement floor (TREASURY ULTRA + TREASURY USDC). The
+    // "incl. in-flight receivable" subtotal adds the pending Libeara USDC
+    // payment when a Stage B cycle is mid-flight. When nothing is in flight
+    // the two values are identical — render only one row (the existing
+    // single-subtotal behavior).
     const treasurySubtotalUsd = ((backing.treasury_ultra_total || 0) * (price || 0)) + treasuryUsdc;
-    rows.push({
-        chain: 'Treasury subtotal',
-        note: 'ex-queue floor',
-        treasury: null,
-        usd: treasurySubtotalUsd,
-        pct: pctFor(treasurySubtotalUsd),
-        isSubtotal: true
-    });
+    const hasReceivable = receivableUsd && receivableUsd > 1;
+    if (hasReceivable) {
+        rows.push({
+            chain: 'Subtotal (on-chain verified only)',
+            note: 'Excludes pending Libeara receivable',
+            treasury: null,
+            usd: treasurySubtotalUsd,
+            pct: pctFor(treasurySubtotalUsd),
+            isSubtotal: true
+        });
+        rows.push({
+            chain: 'Subtotal (incl. in-flight receivable)',
+            note: 'Full economic backing including Libeara IOU',
+            treasury: null,
+            usd: treasurySubtotalUsd + receivableUsd,
+            pct: pctFor(treasurySubtotalUsd + receivableUsd),
+            isSubtotal: true
+        });
+    } else {
+        rows.push({
+            chain: 'Treasury subtotal',
+            note: 'ex-queue floor',
+            treasury: null,
+            usd: treasurySubtotalUsd,
+            pct: pctFor(treasurySubtotalUsd),
+            isSubtotal: true
+        });
+    }
 
     // In-flight ULTRA in Libeara's UltraManagerFiat redemption queue.
     if (queueUltra > 0.01) {
@@ -605,7 +654,7 @@ function updateTreasuryTable(backing) {
         });
     }
 
-    const totalUsd = treasurySubtotalUsd + (queueUltra * (price || 0));
+    const totalUsd = treasurySubtotalUsd + (queueUltra * (price || 0)) + (hasReceivable ? receivableUsd : 0);
     rows.push({
         chain: 'Total',
         treasury: (backing.treasury_ultra_total || 0) + queueUltra,
@@ -1085,6 +1134,181 @@ function renderPegChart(history) {
 }
 
 // Dynamic Liquidity & Peg star rating
+// Block B1: Current-cycle widget — renders a four-checkpoint progress strip
+// for the live Stage B cycle plus a compact details list. Only rendered
+// when backing.flow_b_current is non-null.
+function updateFlowBCurrent(backing) {
+    const container = document.getElementById('flow-b-current-widget');
+    if (!container) return;
+    const fbc = backing && backing.flow_b_current;
+    if (!fbc) { container.innerHTML = ''; return; }
+
+    const hasQueue = !!fbc.queue_entry_ts;
+    const hasBurn  = !!fbc.burn_ts;
+    const isSettlementPending = fbc.status === 'settlement_pending';
+    const nowMs = Date.now();
+    const burnMs = fbc.burn_ts ? Date.parse(fbc.burn_ts) : null;
+    const expMs  = fbc.settlement_expected_by ? Date.parse(fbc.settlement_expected_by) : null;
+
+    // Settlement-checkpoint status color
+    let settlementIcon = '⏸', settlementColor = 'text-gray-500';
+    if (isSettlementPending) {
+        settlementIcon = '⏳';
+        if (expMs && nowMs > expMs + 7 * 24 * 3600 * 1000) {
+            settlementColor = 'text-red-300';  // past T+14d
+        } else if (expMs && nowMs > expMs) {
+            settlementColor = 'text-yellow-300'; // past T+7d
+        } else {
+            settlementColor = 'text-blue-300';
+        }
+    }
+
+    const queueIcon = hasQueue ? '<span class="text-green-400">✓</span>' : '<span class="text-gray-500">⏸</span>';
+    const burnIcon  = hasBurn  ? '<span class="text-green-400">✓</span>' : '<span class="text-gray-500">⏸</span>';
+    const settlemIcon = `<span class="${settlementColor}">${settlementIcon}</span>`;
+    const completeIcon = '<span class="text-gray-500">⏸</span>';
+
+    const queueDate = fbc.queue_entry_ts ? fbc.queue_entry_ts.slice(0, 19).replace('T', ' ') + ' UTC' : '—';
+    const burnDate  = fbc.burn_ts ? fbc.burn_ts.slice(0, 19).replace('T', ' ') + ' UTC' : '—';
+    const expectedDate = fbc.settlement_expected_by ? fbc.settlement_expected_by.slice(0, 10) : '—';
+    const receivableUsd = fbc.receivable_usd_estimate;
+
+    const queueAmt = fbc.queue_entry_ultra_amount
+        ? formatNumber(fbc.queue_entry_ultra_amount, 0) + ' ULTRA'
+        : '—';
+    const burnAmt  = fbc.burn_ultra_amount
+        ? formatNumber(fbc.burn_ultra_amount, 0) + ' ULTRA'
+        : '—';
+    const receivableAmt = receivableUsd ? '≈ $' + formatNumber(receivableUsd, 0) : '—';
+
+    const queueTxLink = fbc.queue_entry_tx
+        ? `<a href="https://etherscan.io/tx/${fbc.queue_entry_tx}" target="_blank" class="text-blue-400 hover:underline">[↗ etherscan]</a>`
+        : '';
+    const burnTxLink = fbc.burn_tx
+        ? `<a href="https://etherscan.io/tx/${fbc.burn_tx}" target="_blank" class="text-blue-400 hover:underline">[↗ etherscan]</a>`
+        : '';
+    const sendersArr = (backing.libeara_payout_sources || []).slice(0, 2);
+    const senderText = sendersArr.length
+        ? sendersArr.map(s => {
+            const short = s.address.slice(0, 10) + '…';
+            return `<a href="https://etherscan.io/address/${s.address}" target="_blank" class="text-blue-400 hover:underline">${short}</a>`;
+          }).join(' / ')
+        : '—';
+
+    let elapsedText = '';
+    if (burnMs) {
+        const elapsedHours = (nowMs - burnMs) / 3600 / 1000;
+        elapsedText = `${elapsedHours.toFixed(1)}h since burn (historical max: ~155h = T+6.4d)`;
+    } else if (hasQueue && !hasBurn) {
+        elapsedText = 'awaiting burn (typically 5–27h after queue entry)';
+    }
+
+    container.innerHTML = `
+        <div class="bg-gray-900/40 border border-gray-700 rounded p-4">
+            <div class="text-sm text-white font-semibold mb-3">
+                Stage B reconciliation — in progress
+            </div>
+            <div class="flex items-center justify-between text-xs text-gray-300 font-mono mb-4 overflow-x-auto">
+                <div class="flex items-center whitespace-nowrap">
+                    <span class="text-white">[Queue]</span>
+                    <span class="mx-2 text-gray-600">──</span>
+                    ${queueIcon}
+                    <span class="mx-2 text-gray-600">──▶</span>
+                </div>
+                <div class="flex items-center whitespace-nowrap">
+                    <span class="text-white">[Burn]</span>
+                    <span class="mx-2 text-gray-600">──</span>
+                    ${burnIcon}
+                    <span class="mx-2 text-gray-600">──▶</span>
+                </div>
+                <div class="flex items-center whitespace-nowrap">
+                    <span class="text-white">[USDC Settlement]</span>
+                    <span class="mx-2 text-gray-600">──</span>
+                    ${settlemIcon}
+                    <span class="mx-2 text-gray-600">──▶</span>
+                </div>
+                <div class="flex items-center whitespace-nowrap">
+                    <span class="text-white">[Complete]</span>
+                    <span class="mx-2 text-gray-600">──</span>
+                    ${completeIcon}
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1 text-xs text-gray-400">
+                <div><span class="text-gray-500">Queue entry:</span> <span class="text-white">${queueAmt}</span> · ${queueDate} ${queueTxLink}</div>
+                <div><span class="text-gray-500">Burn:</span> <span class="text-white">${burnAmt}</span> · ${burnDate} ${burnTxLink}</div>
+                <div><span class="text-gray-500">USDC expected:</span> <span class="text-white">${receivableAmt}</span> · by ${expectedDate} from ${senderText}</div>
+                <div><span class="text-gray-500">Elapsed:</span> <span class="text-white">${elapsedText}</span></div>
+            </div>
+        </div>
+    `;
+}
+
+// Block B2: Historical cycles table — renders from data/thbill_flow_b_cycles.json.
+// Includes an "in progress" row pinned to top if backing.flow_b_current is set.
+function updateFlowBCyclesTable(cyclesDoc, backing) {
+    const tbody = document.getElementById('flow-b-cycles-table');
+    const footer = document.getElementById('flow-b-cycles-footer');
+    if (!tbody) return;
+
+    const cycles = (cyclesDoc && cyclesDoc.cycles) || [];
+    // Descending by burn date, in-progress pinned first
+    const completed = cycles.filter(c => c.status === 'complete')
+        .sort((a, b) => (b.burn_ts || '').localeCompare(a.burn_ts || ''));
+    const pending = cycles.filter(c => c.status !== 'complete')
+        .sort((a, b) => (b.burn_ts || '').localeCompare(a.burn_ts || ''));
+    const ordered = [...pending, ...completed];
+
+    if (!ordered.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-3 text-gray-500">No cycles recorded yet.</td></tr>';
+        if (footer) footer.textContent = '';
+        return;
+    }
+
+    const fmtUltra = amt => amt != null ? formatNumber(amt, 0) : '—';
+    const txLink = (hash) => hash
+        ? ` <a href="https://etherscan.io/tx/${hash}" target="_blank" class="text-blue-400 hover:underline text-xs">↗</a>`
+        : '';
+    const addrLink = (addr) => addr
+        ? `<a href="https://etherscan.io/address/${addr}" target="_blank" class="text-blue-400 hover:underline">${addr.slice(0, 10)}…</a>`
+        : 'TBD';
+
+    tbody.innerHTML = ordered.map(c => {
+        const isPending = c.status !== 'complete';
+        const rowCls = isPending ? 'border-t border-gray-700/50 bg-blue-900/10 italic' : 'border-t border-gray-700/50';
+        const label = isPending ? 'In progress' : c.cycle_label;
+        const burnDate = c.burn_ts ? c.burn_ts.slice(0, 10) : '—';
+        const settlementDate = c.settlement_ts ? c.settlement_ts.slice(0, 10) : '—';
+        const tDays = isPending
+            ? '≤T+7'
+            : (c.settlement_days_after_burn != null ? `T+${c.settlement_days_after_burn.toFixed(1)}d` : '—');
+        const senderCell = isPending
+            ? '<span class="text-gray-500 italic">TBD</span>'
+            : addrLink(c.settlement_sender);
+        return `
+            <tr class="${rowCls}">
+                <td class="px-5 py-3">${label}</td>
+                <td class="text-right px-5 py-3">${fmtUltra(c.burn_ultra_amount)}${txLink(c.burn_tx)}</td>
+                <td class="text-right px-5 py-3 text-gray-400">${burnDate}</td>
+                <td class="text-right px-5 py-3">${settlementDate}${txLink(c.settlement_tx)}</td>
+                <td class="text-right px-5 py-3">${tDays}</td>
+                <td class="px-5 py-3">${senderCell}</td>
+            </tr>
+        `;
+    }).join('');
+
+    if (footer) {
+        const completeCount = completed.length;
+        const tDaysList = completed.filter(c => c.settlement_days_after_burn != null).map(c => c.settlement_days_after_burn);
+        if (completeCount && tDaysList.length) {
+            const min = Math.min(...tDaysList);
+            const max = Math.max(...tDaysList);
+            footer.textContent = `Historical data from ${completeCount} completed cycle${completeCount === 1 ? '' : 's'}. Settlement window ranged T+${min.toFixed(1)} to T+${max.toFixed(1)} days. T+7 is the conservative upper bound; beyond that is out-of-envelope.`;
+        } else {
+            footer.textContent = `${ordered.length} cycle${ordered.length === 1 ? '' : 's'} recorded.`;
+        }
+    }
+}
+
 function updateLiquidityPegRating(peg, liquidity, pegHistory) {
     const starsEl = document.getElementById('rating-liquidity-stars');
     const noteEl = document.getElementById('rating-liquidity-note');
@@ -1195,6 +1419,15 @@ async function fetchAndUpdate() {
         } catch (e) { /* use empty array fallback */ }
 
         updateNetFlow(data.redemption_flow, supplyHistory, data.backing ? data.backing.thbill_supply : null);
+
+        // Flow B current-cycle widget + historical cycles table
+        updateFlowBCurrent(data.backing);
+        let flowBCyclesDoc = null;
+        try {
+            const cyclesResp = await fetch(FLOW_B_CYCLES_URL);
+            if (cyclesResp.ok) flowBCyclesDoc = await cyclesResp.json();
+        } catch (e) { /* section just shows history-missing state */ }
+        updateFlowBCyclesTable(flowBCyclesDoc, data.backing);
 
         renderPegChart(pegHistory);
         updateLiquidityTable(data.secondary_liquidity);

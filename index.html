@@ -231,6 +231,42 @@
             </div>
         </section>
 
+        <!-- Reconciliation Activity (Stage B / Flow B) -->
+        <section class="mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-white">Reconciliation Activity</h2>
+            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                <div class="p-5">
+                    <p class="text-gray-300 text-sm mb-4">
+                        Stage B cycles: Theo periodically moves ULTRA into Libeara's
+                        UltraManagerFiat queue to settle batches of user redemptions. ULTRA burns
+                        within 5–27 hours; USDC returns to Theo's treasury at T+1 to T+7 days.
+                        Backing ratio dips during settlement pending are expected and time-bounded.
+                    </p>
+                    <!-- Block B1: current cycle widget (populated only when flow_b_current != null) -->
+                    <div id="flow-b-current-widget" class="mb-4"><!-- populated by app.js --></div>
+                </div>
+                <!-- Block B2: historical cycles table -->
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-900">
+                        <tr>
+                            <th class="text-left px-5 py-3 text-gray-400 font-medium">Cycle</th>
+                            <th class="text-right px-5 py-3 text-gray-400 font-medium">ULTRA burned</th>
+                            <th class="text-right px-5 py-3 text-gray-400 font-medium">Burn date</th>
+                            <th class="text-right px-5 py-3 text-gray-400 font-medium">USDC arrived</th>
+                            <th class="text-right px-5 py-3 text-gray-400 font-medium">T+Days</th>
+                            <th class="text-left px-5 py-3 text-gray-400 font-medium">Sender</th>
+                        </tr>
+                    </thead>
+                    <tbody id="flow-b-cycles-table">
+                        <tr><td colspan="6" class="px-5 py-3 text-gray-500">Loading…</td></tr>
+                    </tbody>
+                </table>
+                <div class="px-5 py-3 text-xs text-gray-500 border-t border-gray-700" id="flow-b-cycles-footer">
+                    <!-- populated by app.js with cycle count + range -->
+                </div>
+            </div>
+        </section>
+
         <!-- Redemption Mechanics -->
         <section class="mb-8">
             <h2 class="text-xl font-semibold mb-4 text-white">Redemption Mechanics</h2>
