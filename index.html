@@ -56,59 +56,34 @@
             <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
                 <h2 class="text-xl font-semibold mb-4 text-white">Executive Summary</h2>
                 <p class="text-gray-300 leading-relaxed mb-4">
-                    <strong>thBILL</strong> is Theo Network's wrapper over a
+                    <strong>thBILL</strong> is Theo Network's on-chain wrapper over a
                     <strong>Standard Chartered Libeara tokenized US T-bill fund</strong>
-                    (Wellington Management sub-advisor, FundBridge MAS-regulated administrator).
-                    ~$135M TVL across Ethereum, Arbitrum, and Solana via LayerZero OFT. NAV
-                    accrues T-bill yield (~3% APY) with no rebase. Each share is a claim on
-                    Libeara's ULTRA token, wrapped via tULTRA and held in Theo's treasury.
+                    (Wellington-managed, FundBridge MAS-regulated). ~$135M TVL on Ethereum,
+                    Arbitrum, and Solana. NAV accrues T-bill yield (~3% APY), no rebase.
                 </p>
                 <ul class="text-gray-300 leading-relaxed space-y-2 list-disc pl-5">
                     <li>
-                        <strong class="text-yellow-300">If you're non-KYC, peg and liquidity are your world.</strong>
-                        KYC'd holders redeem at NAV through Theo → Libeara → USDC
-                        (T+4 business days, $50K min). Everyone else <strong>cannot primary-redeem at all</strong>
-                        — the only exit is a DEX sale at the prevailing peg discount, subject
-                        to pool depth. That makes <strong>Peg Performance</strong> and
-                        <strong>Secondary Market Liquidity</strong> the two sections non-KYC
-                        readers should prioritize; the <strong>Peg Discount</strong> card in
-                        Live Metrics is the live exit-cost number. Empirical non-KYC exit cost
-                        runs ~30–50 bps below NAV on the largest pools; larger sizes slip faster.
+                        <strong class="text-yellow-300">Non-KYC? Peg and liquidity are what matters.</strong>
+                        KYC'd holders redeem at NAV (T+4 business days, $50K min); everyone else
+                        exits only via DEX at the prevailing peg discount, subject to pool depth.
+                        Watch the <strong>Peg Discount</strong> card above and the
+                        <strong>Peg Performance</strong> + <strong>Secondary Market Liquidity</strong>
+                        sections below.
                     </li>
                     <li>
-                        <strong>Underlying T-bills are strong; wrapper contracts are not contract-enforced.</strong>
-                        The T-bills themselves are institutional-grade (Wellington-managed,
-                        Standard Chartered-custodied, AAA-rated by S&amp;P and Particula). But
-                        thBILL → tULTRA and tULTRA → ULTRA are both synthetic ERC-4626 layers
-                        that hold zero of the asset they declare; backing is reconciled against
-                        Theo's treasury custody + Libeara's settlement pipeline, not enforced
-                        by the contracts. NAV is verifiable on-chain (Libeara-signed daily);
-                        custody is attested (TREASURY wallet readable, but the "complete set"
-                        claim relies on Theo's disclosure being accurate). See
-                        <strong>Collateral &amp; Backing</strong> and <strong>Treasury Holdings</strong>
-                        for the full breakdown.
-                    </li>
-                    <li>
-                        <strong>Redemption runs as a two-stage pipeline with cyclical backing-ratio dips.</strong>
-                        <em>Stage A:</em> users redeem off-chain via Theo's MPC continuously.
-                        <em>Stage B:</em> Theo batches accumulated burns every 30–100 days,
-                        triggering Libeara to settle the fund and wire USDC back within
-                        T+1 to T+7 business days. During the 1–7 day settlement window, ~10–15%
-                        of backing briefly sits off-chain as a Libeara receivable; three backing
-                        tiers (economic / on-chain verified / post-settlement floor) are tracked
-                        so this shows up as a visible cycle, not as undercollateralization.
-                        <strong>Reconciliation Activity</strong> tracks current and historical cycles.
-                    </li>
-                    <li>
-                        <strong>Main issuer risk is centralization.</strong> Theo Protocol
-                        Corporation is Panama-registered and non-regulated. Minting, redemption,
-                        and treasury are MPC-controlled; both thBILL and tULTRA are
-                        UUPS-upgradeable with no timelock. Libeara is a separate Standard Chartered
-                        subsidiary providing the underlying fund — not merged with Theo. A single
-                        Zenith audit exists but isn't publicly linked. Detail in
-                        <strong>Risk Analysis</strong> below.
+                        The on-chain wrappers (thBILL, tULTRA) are synthetic ERC-4626s that hold
+                        zero of the asset they declare. Backing is reconciled against Theo's
+                        treasury custody + Libeara's settlement pipeline, not enforced by the
+                        contracts. The ratio dips ~10–15pp during periodic Libeara settlement
+                        windows (1–7 days, tracked in <strong>Reconciliation Activity</strong>) —
+                        this is a visible cycle, not undercollateralization.
                     </li>
                 </ul>
+                <p class="text-gray-400 text-sm mt-4">
+                    For the full risk narrative — audit status, counterparty stack, issuer
+                    governance, and sizing guidance — see the
+                    <a href="https://tidresearch.com/reports/thbill/" target="_blank" class="text-blue-400 hover:underline">retail risk report at tidresearch.com →</a>
+                </p>
             </div>
         </section>
 
