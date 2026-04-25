@@ -540,11 +540,28 @@
         <!-- Disclaimer -->
         <section class="mb-8">
             <div class="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-5">
-                <h3 class="font-semibold text-yellow-500 mb-2">Disclaimer</h3>
+                <h3 class="font-semibold text-yellow-500 mb-2">Disclaimer & Methodology Limits</h3>
+                <p class="text-yellow-200/80 text-sm mb-3">
+                    This dashboard reports on-chain-verifiable data plus issuer-published
+                    claims — not every external dependency or novel attack class.
+                </p>
+                <p class="text-yellow-200/80 text-sm mb-3">
+                    <strong>Cannot fully verify:</strong> LayerZero Endpoint upgrades
+                    (continuously evolving), MPC operator threshold and signer identities
+                    (publicly "MPC", no detail), T-bill custody at Standard Chartered,
+                    Wellington's portfolio composition, the Zenith audit report (acknowledged
+                    but not publicly linked).
+                </p>
+                <p class="text-yellow-200/80 text-sm mb-3">
+                    <strong>Methodology is retrospective.</strong> Novel attack classes typically
+                    get enumerated only after they manifest. The rsETH OFT exploit
+                    (April 2026, single-DVN bridge configuration) is a recent example —
+                    DVN-config audits became part of thBILL's analysis post-incident,
+                    not pre-emptively. Future attack classes may produce similar gaps.
+                </p>
                 <p class="text-yellow-200/80 text-sm">
-                    This report is for informational purposes only and does not constitute financial advice.
-                    The data presented is collected from on-chain sources and third-party APIs and may not
-                    be complete or accurate. Always do your own research before investing.
+                    Informational only; not financial advice. Full methodology in the
+                    <a href="https://tidresearch.com/reports/thbill/" target="_blank" class="underline hover:text-yellow-100">retail risk report at tidresearch.com</a>.
                 </p>
             </div>
         </section>
