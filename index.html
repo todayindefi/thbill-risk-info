@@ -255,25 +255,34 @@
             </div>
         </section>
 
-        <!-- Collateral & Backing -->
+        <!-- Collateral & Backing (merged) -->
         <section class="mb-8">
             <h2 class="text-xl font-semibold mb-4 text-white">Collateral & Backing</h2>
+
+            <!-- Wrapper Integrity disclosure (always visible) -->
+            <div class="bg-gray-800 rounded-lg p-4 border border-yellow-700/40 mb-4">
+                <div class="text-xs uppercase tracking-wider text-yellow-300 mb-1">Wrapper Integrity</div>
+                <p class="text-gray-300 text-sm">
+                    The tULTRA wrapper contract holds <span class="text-yellow-300 font-medium">0 ULTRA</span>
+                    — synthetic ERC-4626, <code class="text-xs bg-gray-700 px-1 py-0.5 rounded">tultra_wrapper_backing_mode = synthetic_attested</code>.
+                    <code>tULTRA.totalAssets()</code> is an admin-attested accounting value, not a contract balance.
+                    thBILL holds 100% of tULTRA supply, but the real backing for both layers sits in Theo's
+                    TREASURY wallet across Ethereum, Arbitrum, and Solana — listed below. This row would flip
+                    to <em>custodial</em> if Theo started locking ULTRA in the wrapper directly (material event).
+                </p>
+            </div>
+
             <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
                 <div class="p-5">
                     <p class="text-gray-300 text-sm mb-4">
-                        thBILL wraps tULTRA, a synthetic ERC-4626 that declares ULTRA (Libeara's
-                        T-bill token) as its underlying but holds <span class="text-yellow-300">zero ULTRA</span>.
-                        The headline USD backing ratio is the <em>economic</em> view — Theo's
-                        treasury ULTRA (across ETH/ARB/SOL) + any in-flight redemption queue ULTRA
-                        + USDC cushion + any in-flight Libeara USDC receivable (during Stage B
-                        settlement windows) — valued at Libeara's on-chain NAV
-                        (<code class="text-xs bg-gray-700 px-1 py-0.5 rounded">UltraManager.lastSetMintExchangeRate</code>,
-                        signed daily by Libeara's admin key) and compared against thBILL liabilities
-                        (supply × thBILL NAV). Stricter on-chain-only and post-settlement-floor
-                        views appear in the detail panel below.
+                        Real backing for thBILL is Theo's treasury ULTRA across chains, plus USDC cushion and any
+                        in-flight Libeara USDC receivable during settlement windows. ULTRA values use Libeara's
+                        on-chain NAV (<code class="text-xs bg-gray-700 px-1 py-0.5 rounded">UltraManager.lastSetMintExchangeRate</code>,
+                        signed daily by Libeara's admin key); USDC is dollar-equivalent. All percentages are USD/USD
+                        against thBILL liability — they sum to the headline backing ratio.
                     </p>
                     <div id="usd-backing-summary" class="mb-4 text-sm">
-                        <!-- populated by app.js -->
+                        <!-- populated by app.js (existing function, no change) -->
                     </div>
                 </div>
                 <table class="w-full text-sm">
@@ -283,50 +292,23 @@
                             <th class="text-right px-5 py-3 text-gray-400 font-medium">Amount</th>
                             <th class="text-right px-5 py-3 text-gray-400 font-medium">Unit</th>
                             <th class="text-right px-5 py-3 text-gray-400 font-medium">USD Value</th>
+                            <th class="text-right px-5 py-3 text-gray-400 font-medium">% of Liability</th>
                         </tr>
                     </thead>
                     <tbody id="backing-table">
-                        <tr><td colspan="4" class="px-5 py-3 text-gray-500">Loading...</td></tr>
+                        <tr><td colspan="5" class="px-5 py-3 text-gray-500">Loading...</td></tr>
                     </tbody>
                 </table>
                 <div class="px-5 py-3 text-xs text-gray-500 border-t border-gray-700">
-                    Per-chain ULTRA custody and in-flight redemption queue are broken out in Treasury
-                    Holdings below. <strong class="text-gray-400">Trust assumption:</strong> coverage
-                    relies on (a) the disclosed TREASURY address being the complete set of Theo-held
-                    ULTRA, and (b) Theo's off-chain accounting faithfully matching on-chain
-                    <code>totalAssets</code> — neither is enforceable from the tULTRA contract alone.
-                    Per <a href="https://docs.theo.xyz/thbill/tultra" target="_blank" class="text-blue-400 hover:underline">Theo's own docs</a>,
+                    Treasury custody (Ethereum + Arbitrum, same EOA):
+                    <a href="https://etherscan.io/address/0xAECCa546baFB16735b273702632C8Cbb83509d8F" target="_blank" class="text-blue-400 hover:underline"><code class="text-xs bg-gray-700 px-1 py-0.5 rounded">0xAECCa546…509d8F</code></a>.
+                    Solana custody is documented in Theo's reserve disclosures.
+                    <strong class="text-gray-400">Trust assumption:</strong> coverage relies on (a) the disclosed
+                    TREASURY address being the complete set of Theo-held ULTRA, and (b) Theo's off-chain accounting
+                    faithfully matching on-chain <code>totalAssets</code> — neither is enforceable from the tULTRA
+                    contract alone. Per <a href="https://docs.theo.xyz/thbill/tultra" target="_blank" class="text-blue-400 hover:underline">Theo's own docs</a>,
                     tULTRA is "backed 1:1 by ULTRA shares <em>or USDC reserved to mint ULTRA shares</em>."
                 </div>
-            </div>
-        </section>
-
-        <!-- Treasury Holdings -->
-        <section class="mb-8">
-            <h2 class="text-xl font-semibold mb-4 text-white">Treasury Holdings</h2>
-            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-                <div class="p-5">
-                    <p class="text-gray-300 text-sm mb-4">
-                        ULTRA held by the Theo Treasury wallet
-                        (<a href="https://etherscan.io/address/0xAECCa546baFB16735b273702632C8Cbb83509d8F" target="_blank" class="text-blue-400 hover:underline"><code class="text-xs bg-gray-700 px-1 py-0.5 rounded">0xAECCa546baFB16735b273702632C8Cbb83509d8F</code></a>)
-                        on each chain, valued at the on-chain ULTRA NAV. Plus any ULTRA currently in Libeara's
-                        fiat redemption queue — in-flight but still Theo-backed until epoch settlement. The
-                        tULTRA wrapper contract itself holds zero ULTRA (synthetic 4626); see the top row below.
-                    </p>
-                </div>
-                <table class="w-full text-sm">
-                    <thead class="bg-gray-900">
-                        <tr>
-                            <th class="text-left px-5 py-3 text-gray-400 font-medium">Chain / Contract</th>
-                            <th class="text-right px-5 py-3 text-gray-400 font-medium">Amount</th>
-                            <th class="text-right px-5 py-3 text-gray-400 font-medium">USD Value</th>
-                            <th class="text-right px-5 py-3 text-gray-400 font-medium">% of thBILL Liability</th>
-                        </tr>
-                    </thead>
-                    <tbody id="treasury-table">
-                        <tr><td colspan="4" class="px-5 py-3 text-gray-500">Loading...</td></tr>
-                    </tbody>
-                </table>
             </div>
         </section>
 

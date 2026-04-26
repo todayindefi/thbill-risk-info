@@ -430,92 +430,156 @@ function updateNetFlow(flow, supplyHistory, currentSupply) {
 function updateBackingTable(backing) {
     if (!backing) return;
 
-    const supply = backing.thbill_supply || 1;
+    const liab = backing.usd_liabilities || 1;
+    const supply = backing.thbill_supply;
     const nav = backing.thbill_nav_per_share;
     const tultraPrice = backing.tultra_usd_price;
-    const hasTultra = backing.tultra_supply != null;
+    const pctOfLiab = (usd) => (usd != null ? (usd / liab) * 100 : null);
 
-    const rows = [
-        {
-            asset: 'thBILL Supply',
-            amount: supply,
-            unit: 'shares',
-            usd: nav ? supply * nav : null,
-            pct: 100,
-            isSupply: true
-        }
+    const rows = [];
+
+    // thBILL liability — denominator anchor
+    rows.push({
+        asset: 'thBILL liability',
+        note: `${formatNumber(supply, 0)} shares × $${nav?.toFixed(6) ?? '?'} NAV`,
+        amount: supply,
+        unit: 'thBILL',
+        usd: (supply && nav) ? supply * nav : null,
+        pct: 100,
+        isLiability: true,
+    });
+
+    // ULTRA per chain (Theo treasury)
+    const ultraChains = [
+        { chain: 'Ethereum', amount: backing.treasury_ultra_ethereum },
+        { chain: 'Arbitrum', amount: backing.treasury_ultra_arbitrum },
+        { chain: 'Solana',   amount: backing.treasury_ultra_solana },
     ];
-
-    if (hasTultra) {
-        const vaultMatch = backing.tultra_vault_balance != null &&
-            Math.abs(backing.tultra_vault_balance - backing.tultra_supply) < 0.01;
-        if (vaultMatch) {
-            rows.push({
-                asset: 'tULTRA Supply',
-                note: '100% in vault',
-                amount: backing.tultra_supply,
-                unit: 'tULTRA',
-                usd: tultraPrice ? backing.tultra_supply * tultraPrice : null,
-                pct: (backing.tultra_supply / supply) * 100
-            });
-        } else {
-            rows.push({
-                asset: 'tULTRA in Vault',
-                amount: backing.tultra_vault_balance,
-                unit: 'tULTRA',
-                usd: tultraPrice ? backing.tultra_vault_balance * tultraPrice : null,
-                pct: (backing.tultra_vault_balance / supply) * 100,
-                isGap: true
-            });
-            rows.push({
-                asset: 'tULTRA Supply',
-                amount: backing.tultra_supply,
-                unit: 'tULTRA',
-                usd: tultraPrice ? backing.tultra_supply * tultraPrice : null,
-                pct: (backing.tultra_supply / supply) * 100,
-                isGap: true
-            });
-        }
-    }
-
-    let defiUsdc = 0;
-    if (backing.treasury_defi_positions) {
-        for (const pos of backing.treasury_defi_positions) {
-            defiUsdc += pos.amount;
-            rows.push({
-                asset: `${pos.protocol} ${pos.token}`,
-                note: `Treasury supply on ${pos.protocol}`,
-                amount: pos.amount,
-                unit: 'USDC',
-                usd: pos.amount,
-                pct: (pos.amount / supply) * 100,
-                isCurrency: true
-            });
-        }
-    }
-
-    const spotUsdc = (backing.treasury_usdc || 0) - defiUsdc;
-    if (spotUsdc > 0.01 || defiUsdc === 0) {
+    let ultraTotal = 0;
+    let ultraTotalUsd = 0;
+    for (const c of ultraChains) {
+        if (!c.amount || c.amount < 0.01) continue;
+        const usd = tultraPrice ? c.amount * tultraPrice : null;
+        ultraTotal += c.amount;
+        if (usd != null) ultraTotalUsd += usd;
         rows.push({
-            asset: 'USDC (spot)',
-            note: 'Treasury wallet',
+            asset: `ULTRA — Theo Treasury (${c.chain})`,
+            amount: c.amount,
+            unit: 'ULTRA',
+            usd: usd,
+            pct: pctOfLiab(usd),
+        });
+    }
+    if (ultraTotal > 0) {
+        rows.push({
+            asset: '↳ ULTRA backing subtotal',
+            amount: ultraTotal,
+            unit: 'ULTRA',
+            usd: ultraTotalUsd,
+            pct: pctOfLiab(ultraTotalUsd),
+            isSubtotal: true,
+        });
+    }
+
+    // In-flight redemption queue (ULTRA pre-burn) — when present
+    const queueUltra = backing.redemption_queue_ultra_total || 0;
+    if (queueUltra > 0.01 && tultraPrice) {
+        const queueUsd = queueUltra * tultraPrice;
+        rows.push({
+            asset: 'ULTRA — UltraManagerFiat queue (in-flight)',
+            note: 'pending burn; Theo-custodied until burn',
+            amount: queueUltra,
+            unit: 'ULTRA',
+            usd: queueUsd,
+            pct: pctOfLiab(queueUsd),
+            isInFlight: true,
+        });
+    }
+
+    // USDC components
+    const treasuryUsdc = backing.treasury_usdc || 0;
+    const aaveEthUsdc = backing.treasury_aave_usdc_ethereum || 0;
+    const debankPositions = backing.treasury_defi_positions || [];
+    const debankSum = debankPositions.reduce((s, p) => s + (p.amount || 0), 0);
+    const spotUsdc = treasuryUsdc - aaveEthUsdc - debankSum;
+
+    if (spotUsdc > 0.01) {
+        rows.push({
+            asset: 'USDC — Treasury wallet (spot)',
             amount: spotUsdc,
             unit: 'USDC',
             usd: spotUsdc,
-            pct: (spotUsdc / supply) * 100,
-            isCurrency: true
+            pct: pctOfLiab(spotUsdc),
+            isCurrency: true,
+        });
+    }
+    if (aaveEthUsdc > 0.01) {
+        rows.push({
+            asset: 'USDC — Aave V3 (Ethereum)',
+            note: 'supplied for yield; aEthUSDC.balanceOf',
+            amount: aaveEthUsdc,
+            unit: 'USDC',
+            usd: aaveEthUsdc,
+            pct: pctOfLiab(aaveEthUsdc),
+            isCurrency: true,
+        });
+    }
+    for (const pos of debankPositions) {
+        if ((pos.amount || 0) < 0.01) continue;
+        rows.push({
+            asset: `USDC — ${pos.protocol}`,
+            note: `${pos.chain} — via DeBank`,
+            amount: pos.amount,
+            unit: 'USDC',
+            usd: pos.amount,
+            pct: pctOfLiab(pos.amount),
+            isCurrency: true,
+        });
+    }
+
+    // Libeara USDC receivable (in-flight) — post-burn, pre-settlement
+    const receivable = backing.libeara_receivable_usd_estimate;
+    const flowB = backing.flow_b_current || {};
+    if (receivable && receivable > 1) {
+        const burnDate = flowB.burn_ts ? flowB.burn_ts.slice(0, 10) : '?';
+        const expectedDate = flowB.settlement_expected_by ? flowB.settlement_expected_by.slice(0, 10) : '?';
+        const burnAmtM = flowB.burn_ultra_amount ? (flowB.burn_ultra_amount / 1e6).toFixed(1) : '?';
+        rows.push({
+            asset: 'USDC — Libeara receivable (in-flight)',
+            note: `${burnAmtM}M ULTRA burned ${burnDate}; expected by ${expectedDate}`,
+            amount: null,
+            unit: 'USDC',
+            usd: receivable,
+            pct: pctOfLiab(receivable),
+            isInFlight: true,
+        });
+    }
+
+    // Total assets — uses backing.usd_assets directly so it matches headline ratio
+    if (backing.usd_assets != null) {
+        rows.push({
+            asset: 'Total assets',
+            amount: null,
+            unit: '',
+            usd: backing.usd_assets,
+            pct: backing.usd_backing_ratio != null ? backing.usd_backing_ratio * 100 : null,
+            isTotal: true,
         });
     }
 
     const tbody = document.getElementById('backing-table');
     tbody.innerHTML = rows.map(row => {
         let rowClass = '';
-        if (row.isGap) rowClass = 'bg-yellow-900/20 text-yellow-400';
-        if (row.isInFlight) rowClass = 'bg-blue-900/20 text-blue-300 italic';
-        if (row.isSupply) rowClass = 'bg-gray-900 font-bold border-b border-gray-700';
+        if (row.isLiability) rowClass = 'bg-gray-900 font-bold border-b border-gray-700';
+        if (row.isSubtotal)  rowClass = 'text-gray-400 italic';
+        if (row.isInFlight)  rowClass = 'bg-blue-900/20 text-blue-300 italic';
+        if (row.isTotal)     rowClass = 'bg-gray-900 font-bold border-t-2 border-gray-600';
 
-        const amount = row.isCurrency ? formatCurrency(row.amount, 2) : formatNumber(row.amount, 2);
-        const usdVal = row.usd !== null && row.usd !== undefined ? '$' + formatNumber(row.usd, 0) : '—';
+        const amount = row.amount != null
+            ? (row.isCurrency ? formatCurrency(row.amount, 0) : formatNumber(row.amount, 2))
+            : '—';
+        const usdVal = row.usd != null ? '$' + formatNumber(row.usd, 0) : '—';
+        const pctVal = row.pct != null ? formatPercent(row.pct) : '—';
         const noteSpan = row.note ? `<span class="text-xs text-gray-500 ml-2">(${row.note})</span>` : '';
 
         return `
@@ -523,195 +587,6 @@ function updateBackingTable(backing) {
                 <td class="px-5 py-3">${row.asset}${noteSpan}</td>
                 <td class="text-right px-5 py-3">${amount}</td>
                 <td class="text-right px-5 py-3 text-gray-400 text-xs">${row.unit || ''}</td>
-                <td class="text-right px-5 py-3">${usdVal}</td>
-            </tr>
-        `;
-    }).join('');
-}
-
-function updateTreasuryTable(backing) {
-    if (!backing) return;
-
-    const price = backing.tultra_usd_price;
-    const liab = backing.usd_liabilities;
-    const usdFor = (ultra) => (price && ultra != null) ? ultra * price : null;
-    const pctFor = (usd) => (liab && usd != null) ? (usd / liab) * 100 : null;
-
-    const queueUltra = backing.redemption_queue_ultra_total || 0;
-    const treasuryUsdc = backing.treasury_usdc || 0;
-    const wrapperBal = backing.ultra_balance_of_wrapper;
-
-    const rows = [];
-
-    // tULTRA wrapper row — surface ULTRA.balanceOf(wrapper) as the first
-    // line so the "synthetic / attested" framing is grounded in a live
-    // data point. Non-zero would flip the whole backing model to custodial.
-    rows.push({
-        chain: 'tULTRA wrapper contract',
-        note: 'ERC-4626 declares asset() = ULTRA; wrapper holds none. See Technical Risk below.',
-        treasury: wrapperBal,
-        usd: usdFor(wrapperBal),
-        isWrapper: true
-    });
-
-    rows.push(
-        {
-            chain: 'Ethereum',
-            treasury: backing.treasury_ultra_ethereum,
-            usd: usdFor(backing.treasury_ultra_ethereum)
-        },
-        {
-            chain: 'Arbitrum',
-            treasury: backing.treasury_ultra_arbitrum,
-            usd: usdFor(backing.treasury_ultra_arbitrum)
-        },
-        {
-            chain: 'Solana',
-            treasury: backing.treasury_ultra_solana,
-            usd: usdFor(backing.treasury_ultra_solana)
-        }
-    );
-
-    // Split the reported treasury_usdc total (spot + Aave eth + other DeFi)
-    // into its components so readers can see where the USDC actually sits.
-    const aaveEthUsdc = backing.treasury_aave_usdc_ethereum || 0;
-    const debankDefiSum = (backing.treasury_defi_positions || [])
-        .reduce((sum, pos) => sum + (pos.amount || 0), 0);
-    const spotUsdc = treasuryUsdc - aaveEthUsdc - debankDefiSum;
-
-    if (spotUsdc > 0.01) {
-        rows.push({
-            chain: 'USDC (treasury cash)',
-            treasury: null,
-            usd: spotUsdc
-        });
-    }
-    if (aaveEthUsdc > 0.01) {
-        rows.push({
-            chain: 'USDC (Aave V3 Ethereum)',
-            note: 'supplied for yield; aEthUSDC.balanceOf',
-            treasury: null,
-            usd: aaveEthUsdc
-        });
-    }
-    // Any other DeFi USDC positions surfaced by DeBank (non-Aave-ETH)
-    for (const pos of (backing.treasury_defi_positions || [])) {
-        if ((pos.amount || 0) < 0.01) continue;
-        rows.push({
-            chain: `USDC (${pos.protocol})`,
-            note: `${pos.chain} — via DeBank`,
-            treasury: null,
-            usd: pos.amount
-        });
-    }
-
-    // Libeara USDC receivable (in-flight). Only appears when a Flow B burn
-    // has occurred but Libeara's USDC payout hasn't yet landed at TREASURY.
-    // Same blue italic treatment as the queue in-flight row, same
-    // semantic: "value exists but not cash in hand yet."
-    const receivableUsd = backing.libeara_receivable_usd_estimate;
-    const flowBCurrent = backing.flow_b_current || {};
-    if (receivableUsd && receivableUsd > 1) {
-        const burnTsDate = flowBCurrent.burn_ts ? flowBCurrent.burn_ts.slice(0, 10) : '?';
-        const expectedDate = flowBCurrent.settlement_expected_by ? flowBCurrent.settlement_expected_by.slice(0, 10) : '?';
-        const burnAmtM = flowBCurrent.burn_ultra_amount ? (flowBCurrent.burn_ultra_amount / 1e6).toFixed(1) : '?';
-        const senders = backing.libeara_payout_sources || [];
-        const senderLinks = senders.slice(0, 2).map(s =>
-            `<a href="https://etherscan.io/address/${s.address}" target="_blank" class="hover:underline">${s.address.slice(0,10)}…</a>`
-        ).join(' or ');
-        rows.push({
-            chain: 'Libeara USDC receivable (in-flight)',
-            note: `${burnAmtM}M ULTRA burned ${burnTsDate}; expected by ${expectedDate} from ${senderLinks || 'Safe / UltraManager'}`,
-            treasury: null,
-            usd: receivableUsd,
-            pct: pctFor(receivableUsd),
-            isInFlight: true
-        });
-    }
-
-    rows.forEach(r => { if (r.pct === undefined) r.pct = pctFor(r.usd); });
-
-    // Treasury subtotals. The "on-chain verified only" subtotal is the
-    // post-settlement floor (TREASURY ULTRA + TREASURY USDC). The
-    // "incl. in-flight receivable" subtotal adds the pending Libeara USDC
-    // payment when a Stage B cycle is mid-flight. When nothing is in flight
-    // the two values are identical — render only one row (the existing
-    // single-subtotal behavior).
-    const treasurySubtotalUsd = ((backing.treasury_ultra_total || 0) * (price || 0)) + treasuryUsdc;
-    const hasReceivable = receivableUsd && receivableUsd > 1;
-    if (hasReceivable) {
-        rows.push({
-            chain: 'Subtotal (on-chain verified only)',
-            note: 'Excludes pending Libeara receivable',
-            treasury: null,
-            usd: treasurySubtotalUsd,
-            pct: pctFor(treasurySubtotalUsd),
-            isSubtotal: true
-        });
-        rows.push({
-            chain: 'Subtotal (incl. in-flight receivable)',
-            note: 'Full economic backing including Libeara IOU',
-            treasury: null,
-            usd: treasurySubtotalUsd + receivableUsd,
-            pct: pctFor(treasurySubtotalUsd + receivableUsd),
-            isSubtotal: true
-        });
-    } else {
-        rows.push({
-            chain: 'Treasury subtotal',
-            note: 'ex-queue floor',
-            treasury: null,
-            usd: treasurySubtotalUsd,
-            pct: pctFor(treasurySubtotalUsd),
-            isSubtotal: true
-        });
-    }
-
-    // In-flight ULTRA in Libeara's UltraManagerFiat redemption queue.
-    if (queueUltra > 0.01) {
-        rows.push({
-            chain: 'In-flight',
-            note: 'UltraManagerFiat redemption queue',
-            treasury: queueUltra,
-            usd: usdFor(queueUltra),
-            pct: pctFor(usdFor(queueUltra)),
-            isInFlight: true
-        });
-    }
-
-    const totalUsd = treasurySubtotalUsd + (queueUltra * (price || 0)) + (hasReceivable ? receivableUsd : 0);
-    rows.push({
-        chain: 'Total',
-        treasury: (backing.treasury_ultra_total || 0) + queueUltra,
-        usd: totalUsd,
-        pct: pctFor(totalUsd),
-        isTotal: true
-    });
-
-    const tbody = document.getElementById('treasury-table');
-    tbody.innerHTML = rows.map(row => {
-        let rowClass = '';
-        if (row.isWrapper) {
-            // Yellow if 0 (synthetic/attested), green if non-zero (custodial)
-            rowClass = (row.treasury && row.treasury > 0.01)
-                ? 'bg-green-900/20 text-green-300'
-                : 'bg-yellow-900/20 text-yellow-300';
-        }
-        if (row.isInFlight) rowClass = 'bg-blue-900/20 text-blue-300 italic';
-        if (row.isSubtotal) rowClass = 'bg-gray-900/40 text-gray-300 border-t border-gray-700';
-        if (row.isTotal) rowClass = 'bg-gray-900 font-medium border-t border-gray-700';
-        const treasuryVal = row.treasury !== null && row.treasury !== undefined ? formatNumber(row.treasury, 2) : '—';
-        const usdVal = row.usd !== null && row.usd !== undefined ? '$' + formatNumber(row.usd, 0) : '—';
-        const pctVal = row.pct !== null && row.pct !== undefined ? formatPercent(row.pct, 2) : '—';
-
-        const chainCell = row.note
-            ? `${row.chain}<span class="block text-xs text-gray-500">${row.note}</span>`
-            : row.chain;
-
-        return `
-            <tr class="${rowClass}">
-                <td class="px-5 py-3">${chainCell}</td>
-                <td class="text-right px-5 py-3">${treasuryVal}</td>
                 <td class="text-right px-5 py-3">${usdVal}</td>
                 <td class="text-right px-5 py-3">${pctVal}</td>
             </tr>
@@ -1518,7 +1393,6 @@ async function fetchAndUpdate() {
         updatePegDiscountCard(data.peg);
         updateUsdBackingSummary(data.backing);
         updateBackingTable(data.backing);
-        updateTreasuryTable(data.backing);
         updatePegStatus(data.peg, data.secondary_liquidity);
 
         let pegHistory = [];
