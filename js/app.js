@@ -111,8 +111,6 @@ function updateUsdBackingSummary(backing) {
 
     const nav = backing.thbill_nav_per_share;
     const supply = backing.thbill_supply;
-    const liab = backing.usd_liabilities;
-    const assets = backing.usd_assets;
     const ratio = backing.usd_backing_ratio;
     const ratioOnChain = backing.usd_backing_ratio_on_chain;
     const ratioFloor = backing.usd_backing_ratio_floor;
@@ -241,41 +239,32 @@ function updateUsdBackingSummary(backing) {
         navDetailLine = `<div class="md:col-span-2"><span class="italic text-gray-400">↳ implied from vault NAV: $${implied.toFixed(6)} — circular, not an independent check</span></div>`;
     }
 
-    const assetsLine = assets !== null && assets !== undefined
-        ? `$${formatNumber(assets, 0)}`
-        : '<span class="text-gray-500">— (needs tULTRA USD price)</span>';
-
-    const ratioLine = ratio !== null && ratio !== undefined
-        ? `<span class="${isCircular ? 'text-yellow-300' : 'text-white'} font-semibold">${formatPercent(ratio * 100)}</span>${isCircular ? ' <span class="text-gray-500 text-xs">(Theo-reported, not independently verified)</span>' : ''}`
-        : '<span class="text-yellow-300 font-semibold">indeterminate</span>';
-
-    // Three-tier ratio detail — shown only when the values diverge (i.e. during
-    // a Flow B cycle). Phase 1: queue active → on-chain > floor. Phase 2:
-    // burned, USDC pending → economic > on-chain == floor. Steady state all
-    // three collapse to one value; secondary lines suppressed.
+    // Alternate ratio views — shown only when values diverge (Flow B cycle) or
+    // when an ex-queue floor is meaningful (queue non-empty). Phase 1: queue
+    // active → on-chain > floor. Phase 2: burned, USDC pending → economic >
+    // on-chain == floor. Steady state collapses to one value; block hidden.
+    // The headline economic ratio lives in the asset table's Total row.
     let ratioTierLines = '';
     const diverges = (ratio !== null && ratio !== undefined
         && ratioOnChain !== null && ratioOnChain !== undefined
         && ratioFloor !== null && ratioFloor !== undefined
         && (Math.abs(ratio - ratioOnChain) >= 0.001 || Math.abs(ratioOnChain - ratioFloor) >= 0.001));
-    if (diverges) {
+    const hasExQueueLine = (queueUltra && queueUltra > 0.01
+        && ratioExQueue !== null && ratioExQueue !== undefined);
+    if (diverges || hasExQueueLine) {
+        let lines = '';
+        if (diverges) {
+            lines += `
+            <div class="md:col-span-2 text-xs text-gray-400">On-chain verified: <span class="text-gray-300">${formatPercent(ratioOnChain * 100)}</span> <span class="text-gray-500">— excludes in-flight Libeara receivable</span></div>
+            <div class="md:col-span-2 text-xs text-gray-400">Post-settlement floor: <span class="text-gray-300">${formatPercent(ratioFloor * 100)}</span> <span class="text-gray-500">— treasury custody + USDC only</span></div>`;
+        }
+        if (hasExQueueLine) {
+            lines += `
+            <div class="md:col-span-2 text-xs text-gray-400">Ex-queue floor: <span class="text-gray-300">${formatPercent(ratioExQueue * 100)}</span> <span class="text-gray-500">— excludes <a href="https://etherscan.io/address/0x257062cb4ca916299fc49cb8fde1e34b43033c93" target="_blank" class="text-blue-400 hover:underline">UltraManagerFiat</a> redemption queue</span></div>`;
+        }
         ratioTierLines = `
-            <div class="md:col-span-2 text-xs text-gray-400 italic">↳ on-chain verified: <span class="text-gray-300 not-italic">${formatPercent(ratioOnChain * 100)}</span> <span class="text-gray-500">(excludes in-flight Libeara receivable)</span></div>
-            <div class="md:col-span-2 text-xs text-gray-400 italic">↳ post-settlement floor: <span class="text-gray-300 not-italic">${formatPercent(ratioFloor * 100)}</span> <span class="text-gray-500">(treasury custody + USDC only)</span></div>`;
-    }
-
-    // In-flight redemption queue: ULTRA in Libeara's UltraManagerFiat, waiting for
-    // the next settlement epoch. Shown as supplementary context — already counted
-    // in usd_assets/usd_backing_ratio. The ex-queue ratio is the post-settlement
-    // floor, useful if the queue clears against a tULTRA burn rather than
-    // returning as treasury USDC.
-    let queueLine = '';
-    if (queueUltra && queueUltra > 0.01 && price) {
-        const queueUsd = queueUltra * price;
-        const exQueueTxt = (ratioExQueue !== null && ratioExQueue !== undefined)
-            ? ` · ex-queue floor: <span class="text-gray-300">${formatPercent(ratioExQueue * 100)}</span>`
-            : '';
-        queueLine = `<div class="md:col-span-2 text-xs text-gray-400 italic">↳ includes ${formatNumber(queueUltra, 0)} ULTRA ($${formatNumber(queueUsd, 0)}) in <a href="https://etherscan.io/address/0x257062cb4ca916299fc49cb8fde1e34b43033c93" target="_blank" class="text-blue-400 hover:underline">UltraManagerFiat</a> redemption queue${exQueueTxt}</div>`;
+            <div class="md:col-span-2 mt-2 text-xs text-gray-400 italic">Alternate ratio views (Flow B in progress):</div>
+            ${lines}`;
     }
 
     container.innerHTML = `
@@ -284,13 +273,9 @@ function updateUsdBackingSummary(backing) {
             ${flowBBadgeLine}
             <div>thBILL NAV: <span class="text-white">${nav ? '$' + nav.toFixed(6) : '-'}</span> <span class="text-gray-500">(USDC/share)</span></div>
             <div>thBILL supply: <span class="text-white">${formatNumber(supply, 0)}</span></div>
-            <div>USD liabilities: <span class="text-white">${liab ? '$' + formatNumber(liab, 0) : '-'}</span></div>
-            <div>USD assets: ${assetsLine}</div>
             <div class="md:col-span-2 mt-1">tULTRA USD price: ${priceLine}</div>
             ${navDetailLine}
-            <div class="md:col-span-2 mt-1">USD backing ratio: ${ratioLine}</div>
             ${ratioTierLines}
-            ${queueLine}
         </div>
     `;
 }
