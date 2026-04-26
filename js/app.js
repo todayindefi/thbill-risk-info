@@ -1003,10 +1003,37 @@ function updatePegStatus(peg, liquidity) {
     }).join('');
 }
 
+// Recent user redemptions table (shown below the peg chart so viewers can
+// line up the overlay markers with deeper time context: 10 events ≈ ~7 weeks).
+function renderRecentRedemptionsTable(redemptions) {
+    const tbody = document.getElementById('recent-redemptions-tbody');
+    if (!tbody) return;
+    if (!redemptions || redemptions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-4 text-gray-500 italic">No recent user redemptions found.</td></tr>';
+        return;
+    }
+    const rows = redemptions.slice(0, 10).map(r => {
+        const ts = new Date(r.iso);
+        const tsLabel = ts.toISOString().replace('T', ' ').slice(0, 16);
+        const amt = (r.amount_thbill || 0).toLocaleString(undefined, {maximumFractionDigits: 0});
+        const fromShort = (r.from || '').slice(0, 6) + '…' + (r.from || '').slice(-4);
+        const txShort = (r.tx || '').slice(0, 8) + '…' + (r.tx || '').slice(-4);
+        return `
+            <tr>
+                <td class="px-5 py-3 text-gray-300 whitespace-nowrap">${tsLabel}</td>
+                <td class="px-5 py-3 text-right text-white font-medium">${amt}</td>
+                <td class="px-5 py-3"><a href="https://etherscan.io/address/${r.from}" target="_blank" class="text-blue-400 hover:underline font-mono text-xs">${fromShort}</a></td>
+                <td class="px-5 py-3 text-right"><a href="https://etherscan.io/tx/${r.tx}" target="_blank" class="text-blue-400 hover:underline font-mono text-xs">${txShort}</a></td>
+            </tr>
+        `;
+    }).join('');
+    tbody.innerHTML = rows;
+}
+
 // Peg history chart
 let pegChartInstance = null;
 
-function renderPegChart(history) {
+function renderPegChart(history, redemptions) {
     try {
         // Filter outliers (early data has 10.6% artifacts)
         const filtered = history.filter(d => Math.abs(d.premium_discount_pct) <= 5);
@@ -1017,6 +1044,42 @@ function renderPegChart(history) {
             return new Date(ts);
         });
         const values = filtered.map(d => d.premium_discount_pct);
+
+        // Build redemption overlay points within the chart's time window.
+        // Each marker is placed on the peg line at its timestamp (linear-
+        // interpolating between adjacent peg samples), so viewers can read
+        // the peg level at the moment of redemption directly off the chart.
+        const minTs = labels[0].getTime();
+        const maxTs = labels[labels.length - 1].getTime();
+        const sampleTimes = labels.map(l => l.getTime());
+        function pegAt(t) {
+            // Binary-search-ish: assume sampleTimes is monotonic ascending.
+            if (t <= sampleTimes[0]) return values[0];
+            if (t >= sampleTimes[sampleTimes.length - 1]) return values[values.length - 1];
+            for (let i = 1; i < sampleTimes.length; i++) {
+                if (sampleTimes[i] >= t) {
+                    const t0 = sampleTimes[i - 1], t1 = sampleTimes[i];
+                    const v0 = values[i - 1], v1 = values[i];
+                    const frac = (t - t0) / (t1 - t0);
+                    return v0 + (v1 - v0) * frac;
+                }
+            }
+            return values[values.length - 1];
+        }
+        const redemptionPoints = (redemptions || [])
+            .map(r => {
+                const t = new Date(r.iso).getTime();
+                return { ...r, t };
+            })
+            .filter(r => r.t >= minTs && r.t <= maxTs)
+            .map(r => ({
+                x: r.t,
+                y: pegAt(r.t),
+                amount: r.amount_thbill,
+                from: r.from,
+                tx: r.tx,
+                iso: r.iso,
+            }));
 
         const canvas = document.getElementById('peg-chart');
         if (!canvas) return;
@@ -1037,20 +1100,40 @@ function renderPegChart(history) {
                     borderWidth: 1.5,
                     pointRadius: 0,
                     pointHitRadius: 8,
-                    fill: {
-                        target: 'origin'
-                    },
+                    // No fill — segment-based fills overlap at adjacent x's,
+                    // compounding their alpha into darker vertical bands around
+                    // sharp spikes. Line + segment borderColor convey the
+                    // sign well enough on their own.
+                    fill: false,
                     segment: {
                         borderColor: function(ctx) {
                             const y = ctx.p1.parsed.y;
                             return y >= 0 ? '#4ade80' : '#f87171';
-                        },
-                        backgroundColor: function(ctx) {
-                            const y = ctx.p1.parsed.y;
-                            return y >= 0 ? 'rgba(74, 222, 128, 0.15)' : 'rgba(248, 113, 113, 0.15)';
                         }
                     },
-                    tension: 0.3
+                    tension: 0
+                }, {
+                    type: 'scatter',
+                    label: 'User redemption',
+                    data: redemptionPoints,
+                    parsing: false,
+                    showLine: false,
+                    fill: false,
+                    backgroundColor: 'rgba(251, 191, 36, 0.55)',
+                    borderColor: '#f59e0b',
+                    borderWidth: 1.5,
+                    pointStyle: 'circle',
+                    pointRadius: function(ctx) {
+                        const a = ctx.raw && ctx.raw.amount;
+                        if (!a || a <= 0) return 4;
+                        return Math.min(14, 4 + Math.log10(a) * 1.6);
+                    },
+                    pointHoverRadius: function(ctx) {
+                        const a = ctx.raw && ctx.raw.amount;
+                        if (!a || a <= 0) return 6;
+                        return Math.min(16, 6 + Math.log10(a) * 1.6);
+                    },
+                    order: 0
                 }]
             },
             options: {
@@ -1078,6 +1161,13 @@ function renderPegChart(history) {
                                 });
                             },
                             label: function(item) {
+                                if (item.dataset.label === 'User redemption' && item.raw) {
+                                    const amt = item.raw.amount || 0;
+                                    const from = (item.raw.from || '').slice(0, 10) + '…';
+                                    const peg = item.parsed.y;
+                                    const pegSign = peg >= 0 ? '+' : '';
+                                    return `Redemption: ${amt.toLocaleString(undefined, {maximumFractionDigits: 0})} thBILL from ${from} (peg ${pegSign}${peg.toFixed(3)}%)`;
+                                }
                                 const val = item.parsed.y;
                                 const sign = val >= 0 ? '+' : '';
                                 return sign + val.toFixed(4) + '%';
@@ -1454,7 +1544,9 @@ async function fetchAndUpdate() {
         } catch (e) { /* section just shows history-missing state */ }
         updateFlowBCyclesTable(flowBCyclesDoc, data.backing);
 
-        renderPegChart(pegHistory);
+        const recentRedemptions = (data.redemption_flow && data.redemption_flow.recent_user_redemptions) || [];
+        renderPegChart(pegHistory, recentRedemptions);
+        renderRecentRedemptionsTable(recentRedemptions);
         updateLiquidityTable(data.secondary_liquidity);
         updateLiquidityPegRating(data.peg, data.secondary_liquidity, pegHistory);
         updateDefiTable(data.defi_markets);
