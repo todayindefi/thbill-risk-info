@@ -607,11 +607,14 @@ const TOKEN_SYMBOLS = {
 };
 
 function formatPairName(pair) {
-    // Convert address pair to symbol pair (e.g., "0xABC.../0xDEF..." -> "thBILL/USDC")
+    // Pair may already be in symbol form ("thBILL/USDC") from GeckoTerminal-sourced
+    // data, or in legacy address form ("0xABC.../0xDEF...") — handle both.
+    if (!pair) return '';
     const parts = pair.split('/');
-    const symbols = parts.map(addr => {
-        const lower = addr.toLowerCase();
-        return TOKEN_SYMBOLS[lower] || addr.slice(0, 8) + '...';
+    const symbols = parts.map(part => {
+        if (!part.startsWith('0x') && !part.startsWith('0X')) return part;
+        const lower = part.toLowerCase();
+        return TOKEN_SYMBOLS[lower] || part.slice(0, 8) + '...';
     });
     return symbols.join('/');
 }
