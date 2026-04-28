@@ -639,7 +639,7 @@ function updateLiquidityTable(liquidity) {
     const tbody = document.getElementById('liquidity-table');
 
     if (pools.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-3 text-gray-500">No pools found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-3 text-gray-500">No pools found</td></tr>';
         return;
     }
 
@@ -675,7 +675,6 @@ function updateLiquidityTable(liquidity) {
                 <td class="text-right px-5 py-3">${formatCurrency(pool.tvl_usd)}</td>
                 <td class="text-right px-5 py-3" title="${depthTitle}">${depthDisplay}</td>
                 <td class="text-right px-5 py-3">${formatCurrency(pool.volume_24h)}</td>
-                <td class="text-right px-5 py-3">${pool.spread ? formatPercent(pool.spread) : '-'}</td>
             </tr>
         `;
     }).join('');
