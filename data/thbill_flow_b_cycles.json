@@ -64,13 +64,14 @@
       "burn_ultra_amount": 15000000,
       "burn_tx": "0x821678f062631311cfd6f9f5e16d26d1c88785b064a7c354b5635461972cc4ee",
       "hold_hours": 26.60,
-      "settlement_ts": null,
-      "settlement_usdc_amount": null,
-      "settlement_tx": null,
-      "settlement_sender": null,
-      "settlement_sender_label": null,
-      "settlement_days_after_burn": null,
-      "status": "settlement_pending"
+      "settlement_ts": "2026-04-29T09:46:23+00:00",
+      "settlement_usdc_amount": 15633892.88,
+      "settlement_tx": "0xbf94f70f9dc7ecd2e3813f5328caf795fe9c5c4ed09af83a4913c4c3c733975b",
+      "settlement_sender": "0x9056777ad890ece386d646a5c698a9a6a779000b",
+      "settlement_sender_label": "UltraManager (ETH)",
+      "settlement_days_after_burn": 5.06,
+      "note": "Settlement routed through UltraManager rather than the Libeara operational Safe used in earlier cycles. Detected by the 95%-single-inflow heuristic — the prior 50%-cumulative rule had marked this complete prematurely on unrelated TREASURY USDC inflows.",
+      "status": "complete"
     }
   ]
 }
