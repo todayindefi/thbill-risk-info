@@ -1330,38 +1330,40 @@ function updateLiquidityPegRating(peg, liquidity, pegHistory) {
         else depthScore = 1;
     }
 
-    // --- Volume score ---
-    let volumeScore = 3;
+    // --- Volume context (NOT scored) ---
+    // For a tokenized T-Bill, holders are park-and-collect; high volume during a
+    // widening discount is a stress signal (forced exits at the haircut), not a
+    // health signal. Surface volume as subtitle context, don't weight the rating.
+    let volumeContext = null;
     if (liquidity && liquidity.total_volume_24h !== null && liquidity.total_volume_24h !== undefined) {
         const vol = liquidity.total_volume_24h;
-        if (vol > 5000000) volumeScore = 5;
-        else if (vol > 1000000) volumeScore = 4;
-        else if (vol > 500000) volumeScore = 3;
-        else if (vol > 100000) volumeScore = 2;
-        else volumeScore = 1;
+        if (vol > 1000000)      volumeContext = 'elevated turnover';
+        else if (vol > 100000)  volumeContext = 'moderate turnover';
+        else                    volumeContext = 'thin turnover';
     }
 
-    // --- Final rating ---
-    const avg = (pegScore + depthScore + volumeScore) / 3;
+    // --- Final rating: peg + depth only ---
+    const avg = (pegScore + depthScore) / 2;
     const finalStars = Math.round(avg);
 
     const filled = '\u2605'.repeat(finalStars);
     const empty = '\u2606'.repeat(5 - finalStars);
     starsEl.textContent = filled + empty;
-    starsEl.title = `${finalStars}/5 stars (peg ${pegScore}, depth ${depthScore}, volume ${volumeScore})`;
+    starsEl.title = `${finalStars}/5 stars (peg ${pegScore}, depth ${depthScore})`;
+    starsEl.classList.remove('text-gray-500');
 
-    // --- Dynamic subtitle based on weakest factor ---
-    const scores = { peg: pegScore, depth: depthScore, volume: volumeScore };
-    const minScore = Math.min(pegScore, depthScore, volumeScore);
+    // --- Dynamic subtitle ---
+    const minScore = Math.min(pegScore, depthScore);
     let subtitle;
     if (minScore >= 4) {
         subtitle = 'Strong liquidity & peg';
-    } else if (scores.peg === minScore) {
+    } else if (pegScore <= depthScore) {
         subtitle = pegScore <= 2 ? 'Significant depeg' : 'Minor peg deviation';
-    } else if (scores.depth === minScore) {
-        subtitle = 'Thin DEX depth';
     } else {
-        subtitle = 'Low trading volume';
+        subtitle = 'Thin DEX depth';
+    }
+    if (volumeContext && minScore < 4) {
+        subtitle += ` (${volumeContext})`;
     }
     noteEl.textContent = subtitle;
 }
