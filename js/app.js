@@ -1291,6 +1291,234 @@ function updateFlowBCyclesTable(cyclesDoc, backing) {
     }
 }
 
+// Stage A current-cycle widget — fires when an in-flight Libeara ULTRA-mint
+// receivable is detected. Mirrors the Flow B widget rendering pattern.
+// Sources: backing.mint_cycle_current (preferred) / mint_cycle_receivable_usd_estimate (fallback).
+function updateStageACurrent(backing) {
+    const container = document.getElementById('stage-a-current-widget');
+    if (!container) return;
+    if (!backing) { container.innerHTML = ''; return; }
+
+    const receivable = backing.mint_cycle_receivable_usd_estimate;
+    const mc = backing.mint_cycle_current || null;
+
+    // Quiet when no receivable in flight
+    if ((!receivable || receivable < 0.01) && !mc) {
+        container.innerHTML = '';
+        return;
+    }
+
+    // Pull whatever fields PegTracker exposes on mint_cycle_current; fall back
+    // gracefully when fields are absent.
+    const detectedTs   = mc && (mc.detected_ts || mc.usdc_forward_ts) || null;
+    const expectedByTs = mc && (mc.settlement_expected_by || mc.mint_expected_by) || null;
+    const usdcAmount   = mc && (mc.usdc_forward_amount || mc.receivable_usd_estimate) || receivable;
+    const usdcTx       = mc && (mc.usdc_forward_tx || null);
+
+    const nowMs = Date.now();
+    const detectedMs = detectedTs ? Date.parse(detectedTs) : null;
+    const expectedMs = expectedByTs ? Date.parse(expectedByTs) : null;
+
+    let mintIcon = '⏳', mintColor = 'text-blue-300';
+    if (expectedMs && nowMs > expectedMs + 7 * 24 * 3600 * 1000) {
+        mintIcon = '⏳'; mintColor = 'text-red-300';
+    } else if (expectedMs && nowMs > expectedMs) {
+        mintIcon = '⏳'; mintColor = 'text-yellow-300';
+    }
+    const completeIcon = '<span class="text-gray-500">⏸</span>';
+    const detectedIcon = detectedTs
+        ? '<span class="text-green-400">✓</span>'
+        : '<span class="text-gray-500">⏸</span>';
+    const mintPendingIcon = `<span class="${mintColor}">${mintIcon}</span>`;
+
+    const detectedDate = detectedTs ? detectedTs.slice(0, 19).replace('T', ' ') + ' UTC' : '—';
+    const expectedDate = expectedByTs ? expectedByTs.slice(0, 10) : '—';
+    const usdcAmt = usdcAmount ? '$' + formatNumber(usdcAmount, 0) : '—';
+    const usdcTxLink = usdcTx
+        ? `<a href="https://etherscan.io/tx/${usdcTx}" target="_blank" class="text-blue-400 hover:underline">[↗ etherscan]</a>`
+        : '';
+
+    let elapsedText = '';
+    if (detectedMs) {
+        const elapsedHours = (nowMs - detectedMs) / 3600 / 1000;
+        elapsedText = `${elapsedHours.toFixed(1)}h since detected (T+1 to T+7d settlement window)`;
+    } else {
+        elapsedText = 'awaiting Libeara mint (typically T+1 to T+7 days)';
+    }
+
+    container.innerHTML = `
+        <div class="bg-gray-900/40 border border-gray-700 rounded p-4">
+            <div class="text-sm text-white font-semibold mb-3">
+                Stage A reconciliation — in progress
+                <span class="text-xs text-gray-400 font-normal ml-2">
+                    (USDC → Libeara → ULTRA mint for new thBILL primary issuance)
+                </span>
+            </div>
+            <div class="flex items-center justify-between text-xs text-gray-300 font-mono mb-4 overflow-x-auto">
+                <div class="flex items-center whitespace-nowrap">
+                    <span class="text-white">[USDC forwarded]</span>
+                    <span class="mx-2 text-gray-600">──</span>
+                    ${detectedIcon}
+                    <span class="mx-2 text-gray-600">──▶</span>
+                </div>
+                <div class="flex items-center whitespace-nowrap">
+                    <span class="text-white">[Libeara mint pending]</span>
+                    <span class="mx-2 text-gray-600">──</span>
+                    ${mintPendingIcon}
+                    <span class="mx-2 text-gray-600">──▶</span>
+                </div>
+                <div class="flex items-center whitespace-nowrap">
+                    <span class="text-white">[ULTRA returned]</span>
+                    <span class="mx-2 text-gray-600">──</span>
+                    ${completeIcon}
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1 text-xs text-gray-400">
+                <div><span class="text-gray-500">USDC receivable:</span> <span class="text-white">${usdcAmt}</span> ${usdcTxLink}</div>
+                <div><span class="text-gray-500">Detected:</span> <span class="text-white">${detectedDate}</span></div>
+                <div><span class="text-gray-500">ULTRA expected by:</span> <span class="text-white">${expectedDate}</span> <span class="text-gray-500">(T+7 from detection)</span></div>
+                <div><span class="text-gray-500">Elapsed:</span> <span class="text-white">${elapsedText}</span></div>
+            </div>
+        </div>
+    `;
+}
+
+// Holder Attribution panel — splits thBILL supply into the intra-protocol
+// thUSD reserve vs the external float, with the float decomposed into
+// OFT-adapter-locked (L2-mirror) and direct-on-Ethereum sub-lines. Hidden
+// entirely when PegTracker hasn't yet supplied the new fields.
+function updateHolderAttribution(backing) {
+    const section = document.getElementById('holder-attribution-section');
+    const body = document.getElementById('holder-attribution-body');
+    if (!section || !body || !backing) return;
+
+    const supply = backing.thbill_supply;
+    const thusd  = backing.thusd_reserve_thbill;
+    const oft    = backing.oft_adapter_thbill;
+    const float_ = backing.external_thbill_float;
+
+    if (supply === null || supply === undefined ||
+        thusd  === null || thusd  === undefined ||
+        float_ === null || float_ === undefined) {
+        section.classList.add('hidden');
+        return;
+    }
+    section.classList.remove('hidden');
+
+    const oftLocked = (oft !== null && oft !== undefined) ? oft : 0;
+    const directEth = float_ - oftLocked;
+    const pctOf = (n) => supply > 0 ? (n / supply * 100) : 0;
+    const fmtTokens = (n) => formatNumber(n, 0);
+    const fmtPct = (n) => n.toFixed(1) + '%';
+
+    const thusdTip = "thUSD's primary reserve. thUSD is Theo's stablecoin product; its reserves are ~96% thBILL. Growth in thUSD drives thBILL primary minting (verified via app.theo.xyz/transparency). This portion is intra-protocol — not accessible secondary-market float.";
+    const floatTip = "thBILL held by users outside Theo's intra-protocol products — retail wallets, institutional positions, Pendle PT markets, Morpho/Euler isolated markets, DEX pools. This is the float relevant for retail sizing decisions, but most of it lives on L2s, not directly on Ethereum.";
+    const oftTip   = "thBILL locked in the LayerZero OFTAdapter on Ethereum (0xfDD22Ce6…F55A5a). Each token here corresponds to a thBILL minted on Arbitrum / HyperEVM / Solana via native OFT — the L2 user owns it; the underlying just sits locked on Ethereum.";
+    const directTip= "thBILL held directly by Ethereum addresses outside the thUSD reserve and the OFT adapter. Materially small (~0.2M of 138M total) — most retail thBILL exposure is on L2s.";
+
+    body.innerHTML = `
+        <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-900">
+                <tr>
+                    <th class="text-left px-5 py-3 text-gray-400 font-medium">Holder</th>
+                    <th class="text-right px-5 py-3 text-gray-400 font-medium">thBILL</th>
+                    <th class="text-right px-5 py-3 text-gray-400 font-medium">% of supply</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-700">
+                <tr title="${thusdTip}">
+                    <td class="px-5 py-3"><span class="text-white">thUSD reserve</span> <span class="text-gray-500">(intra-protocol)</span></td>
+                    <td class="px-5 py-3 text-right text-white font-mono">${fmtTokens(thusd)}</td>
+                    <td class="px-5 py-3 text-right text-gray-300 font-mono">${fmtPct(pctOf(thusd))}</td>
+                </tr>
+                <tr title="${floatTip}">
+                    <td class="px-5 py-3"><span class="text-white">External float</span> <span class="text-gray-500">(held outside Theo)</span></td>
+                    <td class="px-5 py-3 text-right text-white font-mono">${fmtTokens(float_)}</td>
+                    <td class="px-5 py-3 text-right text-gray-300 font-mono">${fmtPct(pctOf(float_))}</td>
+                </tr>
+                <tr title="${oftTip}">
+                    <td class="px-5 py-3 pl-10 text-gray-400">↳ Locked in OFT adapter <span class="text-gray-500">(L2-mirror)</span></td>
+                    <td class="px-5 py-3 text-right text-gray-300 font-mono">${fmtTokens(oftLocked)}</td>
+                    <td class="px-5 py-3 text-right text-gray-500 font-mono">${fmtPct(pctOf(oftLocked))}</td>
+                </tr>
+                <tr title="${directTip}">
+                    <td class="px-5 py-3 pl-10 text-gray-400">↳ Direct on Ethereum</td>
+                    <td class="px-5 py-3 text-right text-gray-300 font-mono">${fmtTokens(directEth)}</td>
+                    <td class="px-5 py-3 text-right text-gray-500 font-mono">${fmtPct(pctOf(directEth))}</td>
+                </tr>
+                <tr class="bg-gray-900/40">
+                    <td class="px-5 py-3 font-semibold text-white">Total supply</td>
+                    <td class="px-5 py-3 text-right text-white font-mono font-semibold">${fmtTokens(supply)}</td>
+                    <td class="px-5 py-3 text-right text-white font-mono">100.0%</td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+        <p class="px-5 py-3 text-xs text-gray-500 border-t border-gray-700 mt-0">
+            Direct-on-Ethereum retail float is only ~${fmtTokens(directEth)} tokens.
+            Most retail thBILL exposure (~${fmtTokens(oftLocked)} of ${fmtTokens(float_)} external) lives on
+            L2s — Arbitrum, HyperEVM, Solana — backed by the Ethereum OFT-adapter lockbox.
+            See "Backing Chain" disclosure below for the recursive-backing context.
+        </p>
+    `;
+
+    // Sync the live thUSD-reserve percentage into the Backing Chain disclosure paragraph
+    const recPctEl = document.getElementById('recursive-thusd-pct');
+    if (recPctEl) recPctEl.textContent = fmtPct(pctOf(thusd));
+}
+
+// Stage A in-flight context banner — surfaces the in-flight Libeara
+// ULTRA-mint receivable when usd_backing_ratio dips between 92% and 100%.
+// This is the "expected pattern" framing for the headline backing ratio dip.
+function updateStageAContextBanner(backing) {
+    const container = document.getElementById('stage-a-context-banner');
+    if (!container || !backing) return;
+
+    const ratio = backing.usd_backing_ratio;
+    const receivable = backing.mint_cycle_receivable_usd_estimate;
+
+    if (!receivable || receivable < 0.01) {
+        container.innerHTML = '';
+        return;
+    }
+
+    const inWindow = ratio !== null && ratio !== undefined && ratio < 1.0 && ratio >= 0.90;
+    const belowFloor = ratio !== null && ratio !== undefined && ratio < 0.90;
+
+    let badgeColor, badgeText, framing;
+    if (belowFloor) {
+        badgeColor = 'bg-red-900/40 text-red-300 border-red-700/50';
+        badgeText  = 'Backing ratio below 90% — escalate';
+        framing    = 'Headline backing ratio is below 90%; the in-flight Libeara mint-cycle receivable is shown for context but does not by itself explain the dip. If the dip persists past T+7 from receivable detection, this exits the expected envelope.';
+    } else if (inWindow) {
+        badgeColor = 'bg-blue-900/40 text-blue-300 border-blue-700/50';
+        badgeText  = 'Stage A · ULTRA mint pending';
+        framing    = 'Short-lived dips below 100% are the expected pattern during the Libeara T+1 to T+7 ULTRA-settlement window for new thBILL mints — including thUSD-driven mints (see Holder Attribution).';
+    } else {
+        // ratio >= 1.0 — economic backing already credits the receivable, just provide brief context
+        badgeColor = 'bg-gray-700/40 text-gray-300 border-gray-600/50';
+        badgeText  = 'Stage A · ULTRA mint pending';
+        framing    = 'A Libeara mint-cycle receivable is in flight from a recent thBILL mint. The economic backing ratio already credits this receivable; on-chain-only and floor tiers show the position pre-credit.';
+    }
+
+    const receivableM = (receivable / 1e6).toFixed(2);
+    const onchainOnly = backing.usd_backing_ratio_on_chain;
+    const onchainTxt = (onchainOnly !== null && onchainOnly !== undefined)
+        ? ` On-chain-only ratio (excluding the receivable): <span class="text-gray-300">${formatPercent(onchainOnly * 100)}</span>.`
+        : '';
+
+    container.innerHTML = `
+        <div class="bg-gray-800 rounded-lg border border-gray-700 p-4">
+            <span class="inline-block px-2 py-0.5 rounded ${badgeColor} border text-xs font-semibold">${badgeText}</span>
+            <div class="text-sm text-gray-300 mt-2 leading-relaxed">
+                In-flight Stage A receivable: <span class="text-white font-semibold">$${receivableM}M</span> ULTRA-mint pending from Libeara (T+1 to T+7 from mint).
+                ${framing}${onchainTxt}
+            </div>
+        </div>
+    `;
+}
+
 function updateLiquidityPegRating(peg, liquidity, pegHistory) {
     const starsEl = document.getElementById('rating-liquidity-stars');
     const noteEl = document.getElementById('rating-liquidity-note');
@@ -1417,6 +1645,9 @@ async function fetchAndUpdate() {
         renderRecentRedemptionsTable(recentRedemptions);
         updateLiquidityTable(data.secondary_liquidity);
         updateLiquidityPegRating(data.peg, data.secondary_liquidity, pegHistory);
+        updateHolderAttribution(data.backing);
+        updateStageAContextBanner(data.backing);
+        updateStageACurrent(data.backing);
         updateDefiTable(data.defi_markets);
 
     } catch (error) {

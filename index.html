@@ -152,6 +152,63 @@
             </div>
         </section>
 
+        <!-- Stage A in-flight banner (renders only when mint_cycle_receivable_usd_estimate > 0) -->
+        <div id="stage-a-context-banner" class="mb-8"><!-- populated by app.js --></div>
+
+        <!-- Holder Attribution (renders only when thusd_reserve_thbill is populated) -->
+        <section id="holder-attribution-section" class="mb-8 hidden">
+            <h2 class="text-xl font-semibold mb-4 text-white">thBILL Holder Attribution</h2>
+            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                <div class="p-5">
+                    <p class="text-gray-300 text-sm mb-4">
+                        thBILL supply splits between Theo's intra-protocol thUSD reserve
+                        (recursive backing) and the external float held by retail / institutional
+                        wallets. The external float is what's relevant for retail sizing — and
+                        most of it lives on L2s, mirrored against the Ethereum OFT-adapter lockbox.
+                    </p>
+                    <div id="holder-attribution-body" class="text-sm">
+                        <!-- populated by app.js -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recursive backing chain disclosure (paired with Holder Attribution above) -->
+        <section id="recursive-backing" class="mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-white">Backing Chain — thBILL ↔ thUSD</h2>
+            <div class="bg-gray-800 rounded-lg p-5 border border-gray-700 text-sm text-gray-300 leading-relaxed space-y-3">
+                <p>
+                    thBILL is the reserve asset for Theo's stablecoin product
+                    <strong class="text-white">thUSD</strong>. As of the most recent snapshot,
+                    <strong class="text-white" id="recursive-thusd-pct">~66%</strong>
+                    of thBILL outstanding is held at the thUSD reserve address (verified on-chain
+                    and on Theo's transparency dashboard at
+                    <a href="https://app.theo.xyz/transparency" target="_blank" class="text-blue-400 hover:underline">app.theo.xyz/transparency</a>).
+                </p>
+                <p>
+                    Implication: thBILL liabilities can grow without any retail thBILL demand —
+                    they grow automatically as thUSD's user base grows. Each new dollar deposited
+                    into thUSD triggers a primary thBILL mint allocated to the thUSD reserve, with
+                    the corresponding ULTRA backing arriving from Libeara at T+1 to T+7. That's why
+                    short-lived backing-ratio dips during a thUSD inflow window are the expected
+                    pattern, not undercollateralization.
+                </p>
+                <p>
+                    For retail sizing, the relevant float is the
+                    <strong class="text-white">External float</strong> line in the Holder Attribution
+                    panel above, not the total supply. The retail-accessible portion is materially
+                    smaller than the headline TVL implies, and most of it lives on L2s mirrored
+                    against the Ethereum OFT-adapter lockbox rather than directly on Ethereum.
+                </p>
+                <p class="text-xs text-gray-500 pt-1">
+                    See also: full risk frame at
+                    <a href="https://tidresearch.com/reports/thbill/" target="_blank" class="text-blue-400 hover:underline">tidresearch.com/reports/thbill</a>
+                    and the thUSD-side analysis at
+                    <a href="https://tidresearch.com/reports/thusd/" target="_blank" class="text-blue-400 hover:underline">tidresearch.com/reports/thusd</a>.
+                </p>
+            </div>
+        </section>
+
         <!-- Peg Performance -->
         <section class="mb-8">
             <h2 id="peg-performance" class="text-xl font-semibold mb-4 text-white">Peg Performance</h2>
@@ -312,9 +369,14 @@
             </div>
         </section>
 
-        <!-- Reconciliation Activity (Stage B / Flow B) -->
+        <!-- Reconciliation Activity (Stage A · mint cycle / Stage B · redemption cycle) -->
         <section class="mb-8">
             <h2 class="text-xl font-semibold mb-4 text-white">Reconciliation Activity</h2>
+
+            <!-- Stage A widget — fires only when mint_cycle_receivable_usd_estimate > 0.
+                 Mirrors the Flow B layout below. Source: backing.mint_cycle_current. -->
+            <div id="stage-a-current-widget" class="mb-4"><!-- populated by app.js --></div>
+
             <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
                 <div class="p-5">
                     <p class="text-gray-300 text-sm mb-4">
@@ -322,6 +384,8 @@
                         UltraManagerFiat queue to settle batches of user redemptions. ULTRA burns
                         within 5–27 hours; USDC returns to Theo's treasury at T+1 to T+7 days.
                         Backing ratio dips during settlement pending are expected and time-bounded.
+                        (Stage A — the upstream USDC→ULTRA mint cycle for new thBILL — appears as a
+                        separate widget above when in flight.)
                     </p>
                     <!-- Block B1: current cycle widget (populated only when flow_b_current != null) -->
                     <div id="flow-b-current-widget" class="mb-4"><!-- populated by app.js --></div>
