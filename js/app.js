@@ -72,11 +72,16 @@ function updateBackingRatio(backing) {
     const isOnchain = priceSource === 'onchain_ultramanager';
     const epoch = backing.ultra_onchain_nav_epoch;
     const receivable = backing.libeara_receivable_usd_estimate;
-    // Amend the subtitle with "(+ Libeara receivable)" only while Stage B is
-    // mid-cycle with an outstanding USDC payment. See detail panel for the
-    // economic / on-chain / floor tier breakdown.
-    const receivableAmend = (receivable && receivable > 0.01)
-        ? ' <span class="text-blue-300">(+ Libeara receivable)</span>'
+    const mintReceivable = backing.mint_cycle_receivable_usd_estimate;
+    // Amend the subtitle with receivable callouts only while a cycle is
+    // mid-flight: Stage B (Libeara USDC payment outstanding) or Stage A (USDC
+    // forwarded to fund, ULTRA mint not yet returned). See detail panel for
+    // the economic / on-chain / floor tier breakdown.
+    const amends = [];
+    if (receivable && receivable > 0.01) amends.push('(+ Libeara receivable)');
+    if (mintReceivable && mintReceivable > 0.01) amends.push('(+ mint-cycle in-flight)');
+    const receivableAmend = amends.length
+        ? ' <span class="text-blue-300">' + amends.join(' ') + '</span>'
         : '';
 
     if (ratio !== null && ratio !== undefined) {

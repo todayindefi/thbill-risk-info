@@ -109,10 +109,16 @@ The largest and most important block. Logical groupings:
 #### Authoritative USD-denominated backing
 | Field | Type | Meaning |
 |---|---|---|
-| `usd_assets` | float | `(treasury_ultra_total + redemption_queue_ultra_total) × tultra_usd_price + treasury_usdc`. |
+| `usd_assets` | float | Three-tier roll-up: `floor` (`treasury_ultra_total × tultra_usd_price + treasury_usdc`) + Stage B in-flight queue (`redemption_queue_ultra_total × tultra_usd_price`) + Stage B `libeara_receivable_usd_estimate` + Stage A `mint_cycle_receivable_usd_estimate`. The receivables stay populated only while the corresponding cycle is mid-flight. |
 | `usd_assets_provenance` | string | `"treasury_custody_cross_check"` — explicit tag that `usd_assets` is a reconciliation against Theo's custody (verified via on-chain `balanceOf` calls), NOT a tally of tokens locked inside the tULTRA wrapper (which holds 0 — see `ultra_balance_of_wrapper`). |
 | `usd_backing_ratio` | float | `usd_assets / usd_liabilities`. The headline backing number. |
-| `usd_backing_ratio_ex_queue` | float | Same ratio computed with the in-flight queue excluded. The "post-settlement floor" — what the ratio would be if queue cleared to zero value instead of returning as USDC. |
+| `usd_backing_ratio_on_chain` | float | `(floor + queue) / usd_liabilities`. Excludes Stage A/B receivables — what's verifiable on-chain right now. |
+| `usd_backing_ratio_floor` | float | `floor / usd_liabilities`. Treasury custody + USDC only; what would remain if the in-flight queue cleared to zero value. |
+| `usd_backing_ratio_ex_queue` | float | Deprecated alias for `usd_backing_ratio_floor`. |
+| `libeara_receivable_usd_estimate` | float\|null | Stage B in-flight receivable: `last_flow_b_burn_amount_ultra × ultra_onchain_nav` between burn and settlement. Null in steady state. Settlement-complete trigger is a single TREASURY USDC inflow ≥ 95% of burn value. |
+| `mint_cycle_receivable_usd_estimate` | float\|null | Stage A in-flight receivable: USDC forwarded TREASURY→UltraManagerFiat for which the matching ULTRA mint hasn't yet returned. Running balance over 30-day window; null/0 in steady state. |
+| `flow_b_current` | object\|null | Stage B reconciliation widget payload: `{status, queue_entry_*, burn_*, settlement_expected_by, receivable_usd_estimate}`. Populated only mid-cycle. |
+| `mint_cycle_current` | object\|null | Stage A reconciliation widget payload: `{status, last_outflow_block, last_outflow_usdc_amount, last_outflow_tx, receivable_usd_estimate}`. Populated only when Stage A receivable > 0. |
 
 #### Deprecated / legacy token-count figures
 These predate the USD-denominated framing and are retained for dashboard backward-compatibility. Do **not** use them for new consumers.
@@ -123,7 +129,7 @@ These predate the USD-denominated framing and are retained for dashboard backwar
 | `ultra_wrapper_delta` | float | `ultra_total − tultra_supply`. Signed: positive = unwrapped ULTRA buffer exists. |
 | `implied_cash` | float | `tultra_supply − ultra_total` (legacy sign). Superseded by `usd_backing_ratio`. |
 | `backing_ratio_ultra_only` | float | Alias for `token_ratio_ultra_to_thbill`. |
-| `backing_ratio_with_usdc` | float | `(ultra_total + treasury_usdc) / thbill_supply`. Token-count + dollars mixing, misleading. |
+| `backing_ratio_with_usdc` | float | `(treasury_ultra_total + treasury_usdc) / thbill_supply`. Token-count + dollars mixing, misleading; numerator excludes Avalanche/Solana ULTRA held by third parties. Use `usd_backing_ratio*` instead. |
 
 #### Self-documenting
 | Field | Type | Meaning |
