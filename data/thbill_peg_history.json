@@ -1,11 +1,5 @@
 [
   {
-    "timestamp": "2026-07-16T10:20:02.313789Z",
-    "nav_per_share": 1.032204,
-    "vwap": 1.018166,
-    "premium_discount_pct": -1.36
-  },
-  {
     "timestamp": "2026-07-16T11:20:01.562629Z",
     "nav_per_share": 1.032204,
     "vwap": 1.018132,
@@ -1006,5 +1000,11 @@
     "nav_per_share": 1.032846,
     "vwap": 1.01504,
     "premium_discount_pct": -1.724
+  },
+  {
+    "timestamp": "2026-07-23T15:20:02.134971Z",
+    "nav_per_share": 1.032846,
+    "vwap": 1.013532,
+    "premium_discount_pct": -1.87
   }
 ]
