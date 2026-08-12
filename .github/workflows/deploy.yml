@@ -4,9 +4,10 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-  schedule:
-    # Update data every hour
-    - cron: '30 * * * *'
+  # No `schedule:` trigger. It ran at :30 and only ever redeployed the tree that
+  # sync_and_push.sh had already pushed at :23, which `on: push` deploys anyway.
+  # Two arrivals per hour into a single-slot concurrency queue is what turned one
+  # stuck run into a 5.4-day outage on 2026-08-06 — see the concurrency note below.
 
 permissions:
   contents: read
@@ -15,7 +16,19 @@ permissions:
 
 concurrency:
   group: "pages"
-  cancel-in-progress: false
+  # GitHub's own Pages template ships `false` so a production deploy is never
+  # interrupted mid-flight. That reasoning does not hold here: this publishes a
+  # data snapshot where only the newest matters, and an interrupted deploy costs
+  # nothing because the next hourly sync pushes again.
+  #
+  # What `false` cost instead: run 31119642089 wedged in `waiting` on 2026-08-06
+  # held this group indefinitely. GitHub queues at most one run per group, so
+  # every new arrival evicted the previously queued one — 99 of 100 consecutive
+  # runs cancelled before allocating a runner, zero deploys, and the live site
+  # served 5.4-day-old risk data while `main` was correct the whole time.
+  #
+  # `true` makes a wedged run cost one cycle instead of every cycle after it.
+  cancel-in-progress: true
 
 jobs:
   build:
