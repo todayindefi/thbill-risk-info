@@ -2,15 +2,15 @@
   "asset": "thBILL",
   "vault_address": "0x5fa487bca6158c64046b2813623e20755091da0b",
   "treasury_address": "0xAECCa546baFB16735b273702632C8Cbb83509d8F",
-  "timestamp": "2026-09-19T20:20:01.814726Z",
+  "timestamp": "2026-09-19T21:20:01.662918Z",
   "tvl_usd": {
-    "total": 23783063.372500002,
+    "total": 23783058.585500002,
     "by_chain": {
       "Base": 0,
+      "Ethereum": 10808273.89752,
       "Arbitrum": 1.27056,
-      "Ethereum": 10808292.73999,
       "Solana": 0,
-      "Monad": 12974769.36195
+      "Monad": 12974783.41742
     }
   },
   "backing": {
@@ -111,7 +111,7 @@
     "supply_24h_ago": 36344449.618164,
     "current_supply": 36344449.618164,
     "note": null,
-    "days_since_last_redemption": 71.88,
+    "days_since_last_redemption": 71.92,
     "last_redemption_timestamp": "2026-07-09T15:16:11Z",
     "last_redemption_amount_thbill": 17530000.0,
     "last_redemption_tx": "0xadd96b5048f0cd57bedfe830fcc6c053f23ff719403355842c083238eb14ca04",
@@ -222,7 +222,7 @@
         "from": "0xfdd22ce6d1f66bc0ec89b20bf16ccb6670f55a5a"
       }
     ],
-    "days_since_last_user_redemption": 72.91,
+    "days_since_last_user_redemption": 72.95,
     "last_user_redemption_timestamp": "2026-07-08T14:37:11Z",
     "last_user_redemption_amount_thbill": 165570.319064,
     "last_user_redemption_tx": "0x8697808d7781c84d18d3c602030c8df37a42ff451685fd212dec41a644248891",
@@ -543,7 +543,7 @@
       "protocol": "concrete",
       "chain": "Stable",
       "pool": "THUSD-THBILL-STABLE",
-      "tvl_usd": 66261229,
+      "tvl_usd": 66260613,
       "apy": 0,
       "apy_base": 0,
       "apy_reward": null,
@@ -563,7 +563,7 @@
       "protocol": "concrete",
       "chain": "Arbitrum",
       "pool": "THUSD-THBILL-ARB",
-      "tvl_usd": 4229560,
+      "tvl_usd": 4229521,
       "apy": 0,
       "apy_base": 0,
       "apy_reward": null,
@@ -593,9 +593,9 @@
       "protocol": "uniswap-v3",
       "chain": "Arbitrum",
       "pool": "USDC-THBILL",
-      "tvl_usd": 159249,
-      "apy": 0.36534,
-      "apy_base": 0.36534,
+      "tvl_usd": 159245,
+      "apy": 0.36532,
+      "apy_base": 0.36532,
       "apy_reward": null,
       "pool_meta": "0.01%"
     },
