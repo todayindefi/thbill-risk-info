@@ -2,15 +2,15 @@
   "asset": "thBILL",
   "vault_address": "0x5fa487bca6158c64046b2813623e20755091da0b",
   "treasury_address": "0xAECCa546baFB16735b273702632C8Cbb83509d8F",
-  "timestamp": "2026-09-20T06:20:01.671464Z",
+  "timestamp": "2026-09-20T07:20:02.342415Z",
   "tvl_usd": {
-    "total": 23782901.1294,
+    "total": 23782512.47341,
     "by_chain": {
       "Base": 0,
-      "Ethereum": 10808218.86725,
-      "Solana": 0,
-      "Monad": 12974680.99161,
-      "Arbitrum": 1.27054
+      "Ethereum": 10808216.79895,
+      "Monad": 12974294.40392,
+      "Arbitrum": 1.27054,
+      "Solana": 0
     }
   },
   "backing": {
@@ -30,7 +30,7 @@
     "tultra_wrapper_backing_mode": "synthetic_attested",
     "redemption_queue_ultra_ethereum": 0.0,
     "redemption_queue_ultra_total": 0,
-    "treasury_usdc": 13811563.624498,
+    "treasury_usdc": 13812203.439921001,
     "treasury_aave_usdc_ethereum": 0.0,
     "treasury_defi_positions": [
       {
@@ -38,7 +38,7 @@
         "chain": "monad",
         "type": "supply",
         "token": "USDC",
-        "amount": 12978114.184633
+        "amount": 12978754.000056
       }
     ],
     "thbill_supply": 36344449.618164,
@@ -54,12 +54,12 @@
     "tultra_implied_price_from_vault": 1.055104,
     "theo_nav_drift_pct": -0.1705,
     "usd_liabilities": 37704931.40072074,
-    "usd_assets": 23787107.294804,
+    "usd_assets": 23787747.110227,
     "usd_assets_provenance": "treasury_custody_cross_check",
-    "usd_backing_ratio": 0.6308752306694106,
-    "usd_backing_ratio_on_chain": 0.6308752306694106,
-    "usd_backing_ratio_floor": 0.6308752306694106,
-    "usd_backing_ratio_ex_queue": 0.6308752306694106,
+    "usd_backing_ratio": 0.6308921996811349,
+    "usd_backing_ratio_on_chain": 0.6308921996811349,
+    "usd_backing_ratio_floor": 0.6308921996811349,
+    "usd_backing_ratio_ex_queue": 0.6308921996811349,
     "hours_since_last_burn": null,
     "settlement_expected_by_iso": null,
     "last_flow_b_burn_iso": "2026-07-10T08:12:47+00:00",
@@ -88,7 +88,7 @@
     "ultra_wrapper_delta": -29121606.959489,
     "implied_cash": 29121606.959489,
     "backing_ratio_ultra_only": 0.1819852959026354,
-    "backing_ratio_with_usdc": 0.3800185384454231,
+    "backing_ratio_with_usdc": 0.3800361426581632,
     "note": "Treasury USDC = spot balance (ETH+ARB) + Aave V3 Ethereum USDC (direct on-chain aEthUSDC.balanceOf) + other DeFi supply positions detected via DeBank (see treasury_defi_positions; Aave V3 ETH filtered there to avoid double-count)",
     "treasury_filq_tokens": 98504.42,
     "filq_nav_usd": 101.27,
@@ -111,7 +111,7 @@
     "supply_24h_ago": 36344449.618164,
     "current_supply": 36344449.618164,
     "note": null,
-    "days_since_last_redemption": 72.3,
+    "days_since_last_redemption": 72.34,
     "last_redemption_timestamp": "2026-07-09T15:16:11Z",
     "last_redemption_amount_thbill": 17530000.0,
     "last_redemption_tx": "0xadd96b5048f0cd57bedfe830fcc6c053f23ff719403355842c083238eb14ca04",
@@ -222,7 +222,7 @@
         "from": "0xfdd22ce6d1f66bc0ec89b20bf16ccb6670f55a5a"
       }
     ],
-    "days_since_last_user_redemption": 73.32,
+    "days_since_last_user_redemption": 73.36,
     "last_user_redemption_timestamp": "2026-07-08T14:37:11Z",
     "last_user_redemption_amount_thbill": 165570.319064,
     "last_user_redemption_tx": "0x8697808d7781c84d18d3c602030c8df37a42ff451685fd212dec41a644248891",
@@ -406,7 +406,7 @@
         "other_token_address": "0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb",
         "volume_24h": 0,
         "tvl_usd": 1360.822,
-        "last_price": 1.01842031196882,
+        "last_price": 1.018420312,
         "price_change_24h_pct": 0.0,
         "depth_2pct_buy": null,
         "depth_2pct_sell": null,
@@ -543,7 +543,7 @@
       "protocol": "concrete",
       "chain": "Stable",
       "pool": "THUSD-THBILL-STABLE",
-      "tvl_usd": 66304832,
+      "tvl_usd": 66304579,
       "apy": 0,
       "apy_base": 0,
       "apy_reward": null,
@@ -563,7 +563,7 @@
       "protocol": "concrete",
       "chain": "Arbitrum",
       "pool": "THUSD-THBILL-ARB",
-      "tvl_usd": 4232344,
+      "tvl_usd": 4232327,
       "apy": 0,
       "apy_base": 0,
       "apy_reward": null,
@@ -633,7 +633,7 @@
       "protocol": "euler-v2",
       "chain": "Arbitrum",
       "pool": "THBILL",
-      "tvl_usd": 13991,
+      "tvl_usd": 13990,
       "apy": 0.04385,
       "apy_base": 0.04385,
       "apy_reward": null,
