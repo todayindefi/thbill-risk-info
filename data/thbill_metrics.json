@@ -2,7 +2,7 @@
   "asset": "thBILL",
   "vault_address": "0x5fa487bca6158c64046b2813623e20755091da0b",
   "treasury_address": "0xAECCa546baFB16735b273702632C8Cbb83509d8F",
-  "timestamp": "2026-09-22T08:20:01.866735Z",
+  "timestamp": "2026-09-22T09:20:01.508606Z",
   "tvl_usd": {
     "total": 18725239.79153,
     "by_chain": {
@@ -46,20 +46,20 @@
     "oft_adapter_thbill": 1714463.980159,
     "external_thbill_float": 1794452.569942005,
     "thusd_reserve_pct": 0.950626503116856,
-    "thbill_nav_per_share": 1.037546,
+    "thbill_nav_per_share": 1.037654,
     "tultra_usd_price": 1.057135,
     "tultra_usd_price_source": "onchain_ultramanager",
     "ultra_onchain_nav": 1.057135,
     "ultra_onchain_nav_epoch": 639,
-    "tultra_implied_price_from_vault": 1.055219,
-    "theo_nav_drift_pct": -0.1812,
-    "usd_liabilities": 37709038.32352759,
+    "tultra_implied_price_from_vault": 1.055328,
+    "theo_nav_drift_pct": -0.1709,
+    "usd_liabilities": 37712963.524086356,
     "usd_assets": 18727040.476111002,
     "usd_assets_provenance": "treasury_custody_cross_check",
-    "usd_backing_ratio": 0.4966194129757678,
-    "usd_backing_ratio_on_chain": 0.4966194129757678,
-    "usd_backing_ratio_floor": 0.4966194129757678,
-    "usd_backing_ratio_ex_queue": 0.4966194129757678,
+    "usd_backing_ratio": 0.49656772436222085,
+    "usd_backing_ratio_on_chain": 0.49656772436222085,
+    "usd_backing_ratio_floor": 0.49656772436222085,
+    "usd_backing_ratio_ex_queue": 0.49656772436222085,
     "hours_since_last_burn": null,
     "settlement_expected_by_iso": null,
     "last_flow_b_burn_iso": "2026-07-10T08:12:47+00:00",
@@ -111,7 +111,7 @@
     "supply_24h_ago": 36344449.618164,
     "current_supply": 36344449.618164,
     "note": null,
-    "days_since_last_redemption": 74.38,
+    "days_since_last_redemption": 74.42,
     "last_redemption_timestamp": "2026-07-09T15:16:11Z",
     "last_redemption_amount_thbill": 17530000.0,
     "last_redemption_tx": "0xadd96b5048f0cd57bedfe830fcc6c053f23ff719403355842c083238eb14ca04",
@@ -222,15 +222,15 @@
         "from": "0xfdd22ce6d1f66bc0ec89b20bf16ccb6670f55a5a"
       }
     ],
-    "days_since_last_user_redemption": 75.41,
+    "days_since_last_user_redemption": 75.45,
     "last_user_redemption_timestamp": "2026-07-08T14:37:11Z",
     "last_user_redemption_amount_thbill": 165570.319064,
     "last_user_redemption_tx": "0x8697808d7781c84d18d3c602030c8df37a42ff451685fd212dec41a644248891",
     "last_user_redemption_from": "0xfdd22ce6d1f66bc0ec89b20bf16ccb6670f55a5a"
   },
   "secondary_liquidity": {
-    "total_volume_24h": 6103.304302999202,
-    "total_tvl_usd": 423132.7239894701,
+    "total_volume_24h": 6200.040848090301,
+    "total_tvl_usd": 423089.6496894701,
     "phantom_volume_24h": 0.0,
     "pools": [
       {
@@ -247,7 +247,7 @@
         "last_price": 1.0167646197,
         "price_change_24h_pct": 0.13,
         "depth_2pct_buy": 7118.972777,
-        "depth_2pct_sell": 33363.827514,
+        "depth_2pct_sell": 32753.482055,
         "spread": null,
         "is_phantom": false
       },
@@ -350,10 +350,10 @@
         "pool_name": "thBILL / USDC 0.01%",
         "fee_tier_pct": 0.0001,
         "other_token_address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-        "volume_24h": 204.268018583,
-        "tvl_usd": 5099.9884,
-        "last_price": 1.0365923442,
-        "price_change_24h_pct": -0.11,
+        "volume_24h": 301.0045636741,
+        "tvl_usd": 5056.9141,
+        "last_price": 1.0106149818,
+        "price_change_24h_pct": -2.62,
         "depth_2pct_buy": 1015.518187,
         "depth_2pct_sell": 405.172729,
         "spread": null,
@@ -524,9 +524,9 @@
     ]
   },
   "peg": {
-    "nav_per_share": 1.037546,
-    "vwap": 1.0164,
-    "premium_discount_pct": -2.0381,
+    "nav_per_share": 1.037654,
+    "vwap": 1.015435,
+    "premium_discount_pct": -2.1413,
     "per_chain_prices": {
       "Arbitrum": {
         "vwap": 1.016765,
@@ -537,8 +537,8 @@
         "volume_24h": 2584.19
       },
       "Ethereum": {
-        "vwap": 1.036592,
-        "volume_24h": 204.27
+        "vwap": 1.010615,
+        "volume_24h": 301.0
       }
     }
   },
@@ -547,7 +547,7 @@
       "protocol": "concrete",
       "chain": "Stable",
       "pool": "THUSD-THBILL-STABLE",
-      "tvl_usd": 66290568,
+      "tvl_usd": 66292689,
       "apy": 0,
       "apy_base": 0,
       "apy_reward": null,
@@ -567,7 +567,7 @@
       "protocol": "concrete",
       "chain": "Arbitrum",
       "pool": "THUSD-THBILL-ARB",
-      "tvl_usd": 4231433,
+      "tvl_usd": 4231568,
       "apy": 0,
       "apy_base": 0,
       "apy_reward": null,
@@ -597,7 +597,7 @@
       "protocol": "uniswap-v3",
       "chain": "Arbitrum",
       "pool": "USDC-THBILL",
-      "tvl_usd": 159081,
+      "tvl_usd": 159082,
       "apy": 0.07324,
       "apy_base": 0.07324,
       "apy_reward": null,
@@ -617,7 +617,7 @@
       "protocol": "morpho-blue",
       "chain": "Hyperliquid L1",
       "pool": "THBILL",
-      "tvl_usd": 21756,
+      "tvl_usd": 21757,
       "apy": 0,
       "apy_base": 0,
       "apy_reward": null,
@@ -627,7 +627,7 @@
       "protocol": "hypurrfi-pooled",
       "chain": "Hyperliquid L1",
       "pool": "THBILL",
-      "tvl_usd": 16595,
+      "tvl_usd": 16596,
       "apy": 0.15403,
       "apy_base": 0.15403,
       "apy_reward": null,
