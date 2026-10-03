@@ -2,14 +2,14 @@
   "asset": "thBILL",
   "vault_address": "0x5fa487bca6158c64046b2813623e20755091da0b",
   "treasury_address": "0xAECCa546baFB16735b273702632C8Cbb83509d8F",
-  "timestamp": "2026-10-03T16:20:01.891532Z",
+  "timestamp": "2026-10-03T17:20:02.271675Z",
   "tvl_usd": {
-    "total": 12181954.281569999,
+    "total": 12182439.14378,
     "by_chain": {
-      "Base": 0,
-      "Ethereum": 2092.16512,
-      "Monad": 12179860.84425,
       "Solana": 0,
+      "Base": 0,
+      "Ethereum": 2092.22124,
+      "Monad": 12180345.65034,
       "Arbitrum": 1.2722
     }
   },
@@ -111,7 +111,7 @@
     "supply_24h_ago": 34752237.545115,
     "current_supply": 34752237.545115,
     "note": null,
-    "days_since_last_redemption": 85.71,
+    "days_since_last_redemption": 85.75,
     "last_redemption_timestamp": "2026-07-09T15:16:11Z",
     "last_redemption_amount_thbill": 17530000.0,
     "last_redemption_tx": "0xadd96b5048f0cd57bedfe830fcc6c053f23ff719403355842c083238eb14ca04",
@@ -222,15 +222,15 @@
         "from": "0xfdd22ce6d1f66bc0ec89b20bf16ccb6670f55a5a"
       }
     ],
-    "days_since_last_user_redemption": 86.74,
+    "days_since_last_user_redemption": 86.78,
     "last_user_redemption_timestamp": "2026-07-08T14:37:11Z",
     "last_user_redemption_amount_thbill": 165570.319064,
     "last_user_redemption_tx": "0x8697808d7781c84d18d3c602030c8df37a42ff451685fd212dec41a644248891",
     "last_user_redemption_from": "0xfdd22ce6d1f66bc0ec89b20bf16ccb6670f55a5a"
   },
   "secondary_liquidity": {
-    "total_volume_24h": 1880.4309867647,
-    "total_tvl_usd": 283246.17564185575,
+    "total_volume_24h": 1969.1011521772,
+    "total_tvl_usd": 283462.8054418557,
     "phantom_volume_24h": 0.0,
     "pools": [
       {
@@ -242,10 +242,10 @@
         "pool_name": "thBILL / USDC 0.01%",
         "fee_tier_pct": 0.0001,
         "other_token_address": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
-        "volume_24h": 967.8264291698,
-        "tvl_usd": 150842.0119,
-        "last_price": 1.0115474465,
-        "price_change_24h_pct": 0.0,
+        "volume_24h": 1057.6618210369,
+        "tvl_usd": 151058.7866,
+        "last_price": 1.0120664071,
+        "price_change_24h_pct": -0.1,
         "depth_2pct_buy": 18105.191039,
         "depth_2pct_sell": 15663.809203,
         "spread": null,
@@ -405,7 +405,7 @@
         "fee_tier_pct": 0.0001,
         "other_token_address": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
         "volume_24h": 0.1212051887,
-        "tvl_usd": 1177.06,
+        "tvl_usd": 1176.9151,
         "last_price": 1.0100432389,
         "price_change_24h_pct": 0.0,
         "depth_2pct_buy": null,
@@ -422,10 +422,10 @@
         "pool_name": "USDC / thBILL 0.01%",
         "fee_tier_pct": 0.0001,
         "other_token_address": "0xb88339cb7199b77e23db6e890353e22632ba630f",
-        "volume_24h": 15.9866382184,
+        "volume_24h": 14.8214117638,
         "tvl_usd": 529.2706,
         "last_price": 1.01210812731705,
-        "price_change_24h_pct": 1.44,
+        "price_change_24h_pct": 0.0,
         "depth_2pct_buy": null,
         "depth_2pct_sell": null,
         "spread": null,
@@ -525,12 +525,12 @@
   },
   "peg": {
     "nav_per_share": 1.038967,
-    "vwap": 1.011381,
-    "premium_discount_pct": -2.6551,
+    "vwap": 1.011678,
+    "premium_discount_pct": -2.6266,
     "per_chain_prices": {
       "Arbitrum": {
-        "vwap": 1.011547,
-        "volume_24h": 967.83
+        "vwap": 1.012066,
+        "volume_24h": 1057.66
       },
       "HyperEVM": {
         "vwap": 1.011189,
@@ -543,7 +543,7 @@
       "protocol": "concrete",
       "chain": "Stable",
       "pool": "THUSD-THBILL-STABLE",
-      "tvl_usd": 66027751,
+      "tvl_usd": 66027112,
       "apy": 0,
       "apy_base": 0,
       "apy_reward": null,
@@ -563,7 +563,7 @@
       "protocol": "concrete",
       "chain": "Arbitrum",
       "pool": "THUSD-THBILL-ARB",
-      "tvl_usd": 4214657,
+      "tvl_usd": 4214616,
       "apy": 0,
       "apy_base": 0,
       "apy_reward": null,
@@ -593,9 +593,9 @@
       "protocol": "uniswap-v3",
       "chain": "Arbitrum",
       "pool": "USDC-THBILL",
-      "tvl_usd": 151014,
-      "apy": 0.0233,
-      "apy_base": 0.0233,
+      "tvl_usd": 151011,
+      "apy": 0.0234,
+      "apy_base": 0.0234,
       "apy_reward": null,
       "pool_meta": "0.01%"
     },
@@ -633,7 +633,7 @@
       "protocol": "hypurrfi-pooled",
       "chain": "Hyperliquid L1",
       "pool": "THBILL",
-      "tvl_usd": 12783,
+      "tvl_usd": 12782,
       "apy": 0.23981,
       "apy_base": 0.23981,
       "apy_reward": null,
