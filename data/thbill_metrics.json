@@ -2,7 +2,7 @@
   "asset": "thBILL",
   "vault_address": "0x5fa487bca6158c64046b2813623e20755091da0b",
   "treasury_address": "0xAECCa546baFB16735b273702632C8Cbb83509d8F",
-  "timestamp": "2026-10-11T18:20:02.254524Z",
+  "timestamp": "2026-10-11T19:20:02.045587Z",
   "tvl_usd": {
     "total": 11214505.527029999,
     "by_chain": {
@@ -112,7 +112,7 @@
     "supply_24h_ago": 29932237.545115,
     "current_supply": 29932237.545115,
     "note": null,
-    "days_since_last_redemption": 93.8,
+    "days_since_last_redemption": 93.84,
     "last_redemption_timestamp": "2026-07-09T15:16:11Z",
     "last_redemption_amount_thbill": 17530000.0,
     "last_redemption_tx": "0xadd96b5048f0cd57bedfe830fcc6c053f23ff719403355842c083238eb14ca04",
@@ -223,15 +223,15 @@
         "from": "0xfdd22ce6d1f66bc0ec89b20bf16ccb6670f55a5a"
       }
     ],
-    "days_since_last_user_redemption": 94.82,
+    "days_since_last_user_redemption": 94.86,
     "last_user_redemption_timestamp": "2026-07-08T14:37:11Z",
     "last_user_redemption_amount_thbill": 165570.319064,
     "last_user_redemption_tx": "0x8697808d7781c84d18d3c602030c8df37a42ff451685fd212dec41a644248891",
     "last_user_redemption_from": "0xfdd22ce6d1f66bc0ec89b20bf16ccb6670f55a5a"
   },
   "secondary_liquidity": {
-    "total_volume_24h": 2445.3326132837997,
-    "total_tvl_usd": 283435.3028576374,
+    "total_volume_24h": 2441.5130950945,
+    "total_tvl_usd": 282060.4946576374,
     "phantom_volume_24h": 0.0,
     "pools": [
       {
@@ -244,7 +244,7 @@
         "fee_tier_pct": 0.0001,
         "other_token_address": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
         "volume_24h": 522.8955307567,
-        "tvl_usd": 153133.7822,
+        "tvl_usd": 152288.7076,
         "last_price": 1.0137315617,
         "price_change_24h_pct": -0.14,
         "depth_2pct_buy": 9560.354613,
@@ -279,10 +279,10 @@
         "pool_name": "USD\u20ae0 / thBILL 0.01%",
         "fee_tier_pct": 0.0001,
         "other_token_address": "0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb",
-        "volume_24h": 1892.9160522291,
-        "tvl_usd": 39305.1562,
+        "volume_24h": 1889.0965340398,
+        "tvl_usd": 39006.8077,
         "last_price": 1.01323856839266,
-        "price_change_24h_pct": -0.1,
+        "price_change_24h_pct": -0.13,
         "depth_2pct_buy": 5898.281859,
         "depth_2pct_sell": 32753.482055,
         "spread": null,
@@ -298,7 +298,7 @@
         "fee_tier_pct": 0.0001,
         "other_token_address": "0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb",
         "volume_24h": 20.8158446965,
-        "tvl_usd": 27773.4212,
+        "tvl_usd": 27562.6051,
         "last_price": 1.01249157652211,
         "price_change_24h_pct": 0.0,
         "depth_2pct_buy": null,
@@ -361,24 +361,6 @@
         "is_phantom": false
       },
       {
-        "market": "UltraSolid V3",
-        "dex_id": "ultrasolid-v3",
-        "chain": "hyperevm",
-        "pair": "thBILL/USD\u20ae0",
-        "pool_address": "0xdc1a8310c41252d92df8ae0bab1ea42931517356",
-        "pool_name": "USD\u20ae0 / thBILL 0.01%",
-        "fee_tier_pct": 0.0001,
-        "other_token_address": "0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb",
-        "volume_24h": 0,
-        "tvl_usd": 1361.4196,
-        "last_price": 1.01357322994519,
-        "price_change_24h_pct": 0.0,
-        "depth_2pct_buy": null,
-        "depth_2pct_sell": null,
-        "spread": null,
-        "is_phantom": false
-      },
-      {
         "market": "Upheaval Finance",
         "dex_id": "upheaval-finance",
         "chain": "hyperevm",
@@ -397,6 +379,24 @@
         "is_phantom": false
       },
       {
+        "market": "UltraSolid V3",
+        "dex_id": "ultrasolid-v3",
+        "chain": "hyperevm",
+        "pair": "thBILL/USD\u20ae0",
+        "pool_address": "0xdc1a8310c41252d92df8ae0bab1ea42931517356",
+        "pool_name": "USD\u20ae0 / thBILL 0.01%",
+        "fee_tier_pct": 0.0001,
+        "other_token_address": "0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb",
+        "volume_24h": 0,
+        "tvl_usd": 1351.0857,
+        "last_price": 1.01357322994519,
+        "price_change_24h_pct": 0.0,
+        "depth_2pct_buy": null,
+        "depth_2pct_sell": null,
+        "spread": null,
+        "is_phantom": false
+      },
+      {
         "market": "Uniswap V4 (Arbitrum)",
         "dex_id": "uniswap-v4-arbitrum",
         "chain": "arbitrum",
@@ -406,7 +406,7 @@
         "fee_tier_pct": 0.0001,
         "other_token_address": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
         "volume_24h": 0,
-        "tvl_usd": 1116.0873,
+        "tvl_usd": 1109.9281,
         "last_price": 1.0149686851,
         "price_change_24h_pct": 0.0,
         "depth_2pct_buy": null,
@@ -424,7 +424,7 @@
         "fee_tier_pct": 0.0001,
         "other_token_address": "0xb88339cb7199b77e23db6e890353e22632ba630f",
         "volume_24h": 8.7051856015,
-        "tvl_usd": 536.9684,
+        "tvl_usd": 532.8925,
         "last_price": 1.01309463869233,
         "price_change_24h_pct": -0.15,
         "depth_2pct_buy": null,
@@ -535,7 +535,7 @@
       },
       "HyperEVM": {
         "vwap": 1.013239,
-        "volume_24h": 1892.92
+        "volume_24h": 1889.1
       }
     }
   },
@@ -544,7 +544,7 @@
       "protocol": "concrete",
       "chain": "Stable",
       "pool": "THUSD-THBILL-STABLE",
-      "tvl_usd": 66143942,
+      "tvl_usd": 66145594,
       "apy": 0,
       "apy_base": 0,
       "apy_reward": null,
@@ -564,7 +564,7 @@
       "protocol": "concrete",
       "chain": "Arbitrum",
       "pool": "THUSD-THBILL-ARB",
-      "tvl_usd": 4222074,
+      "tvl_usd": 4222179,
       "apy": 0,
       "apy_base": 0,
       "apy_reward": null,
@@ -614,7 +614,7 @@
       "protocol": "morpho-blue",
       "chain": "Hyperliquid L1",
       "pool": "THBILL",
-      "tvl_usd": 20683,
+      "tvl_usd": 20684,
       "apy": 0,
       "apy_base": 0,
       "apy_reward": null,
@@ -624,7 +624,7 @@
       "protocol": "euler-v2",
       "chain": "Arbitrum",
       "pool": "THBILL",
-      "tvl_usd": 19286,
+      "tvl_usd": 19287,
       "apy": 0.0241,
       "apy_base": 0.0241,
       "apy_reward": null,
