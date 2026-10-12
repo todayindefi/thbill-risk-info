@@ -2,16 +2,16 @@
   "asset": "thBILL",
   "vault_address": "0x5fa487bca6158c64046b2813623e20755091da0b",
   "treasury_address": "0xAECCa546baFB16735b273702632C8Cbb83509d8F",
-  "timestamp": "2026-10-12T04:20:02.223197Z",
+  "timestamp": "2026-10-12T05:20:02.148817Z",
   "tvl_usd": {
-    "total": 11215974.69182,
+    "total": 11216284.229430001,
     "by_chain": {
-      "Ethereum": 0.001,
+      "Solana": 0,
       "Base": 0,
+      "Ethereum": 0.001,
       "Arbitrum": 1.27289,
-      "Monad": 7197003.34952,
-      "Stable": 4018970.06841,
-      "Solana": 0
+      "Monad": 7197232.38879,
+      "Stable": 4019050.56675
     }
   },
   "backing": {
@@ -112,7 +112,7 @@
     "supply_24h_ago": 29932237.545115,
     "current_supply": 29932237.545115,
     "note": null,
-    "days_since_last_redemption": 94.21,
+    "days_since_last_redemption": 94.25,
     "last_redemption_timestamp": "2026-07-09T15:16:11Z",
     "last_redemption_amount_thbill": 17530000.0,
     "last_redemption_tx": "0xadd96b5048f0cd57bedfe830fcc6c053f23ff719403355842c083238eb14ca04",
@@ -223,15 +223,15 @@
         "from": "0xfdd22ce6d1f66bc0ec89b20bf16ccb6670f55a5a"
       }
     ],
-    "days_since_last_user_redemption": 95.24,
+    "days_since_last_user_redemption": 95.28,
     "last_user_redemption_timestamp": "2026-07-08T14:37:11Z",
     "last_user_redemption_amount_thbill": 165570.319064,
     "last_user_redemption_tx": "0x8697808d7781c84d18d3c602030c8df37a42ff451685fd212dec41a644248891",
     "last_user_redemption_from": "0xfdd22ce6d1f66bc0ec89b20bf16ccb6670f55a5a"
   },
   "secondary_liquidity": {
-    "total_volume_24h": 2523.3988562961,
-    "total_tvl_usd": 280594.1896576374,
+    "total_volume_24h": 1162.8534345803,
+    "total_tvl_usd": 282426.78605763736,
     "phantom_volume_24h": 0.0,
     "pools": [
       {
@@ -244,7 +244,7 @@
         "fee_tier_pct": 0.0001,
         "other_token_address": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
         "volume_24h": 594.3048676303,
-        "tvl_usd": 150951.1984,
+        "tvl_usd": 152330.2985,
         "last_price": 1.0141258457,
         "price_change_24h_pct": 0.04,
         "depth_2pct_buy": 9560.354613,
@@ -279,10 +279,10 @@
         "pool_name": "USD\u20ae0 / thBILL 0.01%",
         "fee_tier_pct": 0.0001,
         "other_token_address": "0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb",
-        "volume_24h": 1901.0224971992,
-        "tvl_usd": 38523.3373,
+        "volume_24h": 568.54856695,
+        "tvl_usd": 38774.8354,
         "last_price": 1.01193764292599,
-        "price_change_24h_pct": -0.05,
+        "price_change_24h_pct": -0.02,
         "depth_2pct_buy": 5898.281859,
         "depth_2pct_sell": 32143.136596,
         "spread": null,
@@ -297,8 +297,8 @@
         "pool_name": "USD\u20ae0 / thBILL 0.01%",
         "fee_tier_pct": 0.0001,
         "other_token_address": "0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb",
-        "volume_24h": 20.8158446965,
-        "tvl_usd": 27888.4118,
+        "volume_24h": 0,
+        "tvl_usd": 28070.4802,
         "last_price": 1.01249157652211,
         "price_change_24h_pct": 0.0,
         "depth_2pct_buy": null,
@@ -370,7 +370,7 @@
         "fee_tier_pct": 0.0001,
         "other_token_address": "0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb",
         "volume_24h": 0,
-        "tvl_usd": 1367.0563,
+        "tvl_usd": 1375.9811,
         "last_price": 1.01357322994519,
         "price_change_24h_pct": 0.0,
         "depth_2pct_buy": null,
@@ -406,7 +406,7 @@
         "fee_tier_pct": 0.0001,
         "other_token_address": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
         "volume_24h": 0,
-        "tvl_usd": 1116.5263,
+        "tvl_usd": 1124.0112,
         "last_price": 1.0149686851,
         "price_change_24h_pct": 0.0,
         "depth_2pct_buy": null,
@@ -423,8 +423,8 @@
         "pool_name": "USDC / thBILL 0.01%",
         "fee_tier_pct": 0.0001,
         "other_token_address": "0xb88339cb7199b77e23db6e890353e22632ba630f",
-        "volume_24h": 7.2556467701,
-        "tvl_usd": 539.1916,
+        "volume_24h": 0,
+        "tvl_usd": 542.7117,
         "last_price": 1.01309463869233,
         "price_change_24h_pct": 0.0,
         "depth_2pct_buy": null,
@@ -526,8 +526,8 @@
   },
   "peg": {
     "nav_per_share": 1.039695,
-    "vwap": 1.012459,
-    "premium_discount_pct": -2.6196,
+    "vwap": 1.013056,
+    "premium_discount_pct": -2.5622,
     "per_chain_prices": {
       "Arbitrum": {
         "vwap": 1.014126,
@@ -535,7 +535,7 @@
       },
       "HyperEVM": {
         "vwap": 1.011938,
-        "volume_24h": 1901.02
+        "volume_24h": 568.55
       }
     }
   },
@@ -544,7 +544,7 @@
       "protocol": "concrete",
       "chain": "Stable",
       "pool": "THUSD-THBILL-STABLE",
-      "tvl_usd": 66145442,
+      "tvl_usd": 66136114,
       "apy": 0,
       "apy_base": 0,
       "apy_reward": null,
@@ -564,7 +564,7 @@
       "protocol": "concrete",
       "chain": "Arbitrum",
       "pool": "THUSD-THBILL-ARB",
-      "tvl_usd": 4222169,
+      "tvl_usd": 4221574,
       "apy": 0,
       "apy_base": 0,
       "apy_reward": null,
@@ -594,9 +594,9 @@
       "protocol": "uniswap-v3",
       "chain": "Arbitrum",
       "pool": "USDC-THBILL",
-      "tvl_usd": 150901,
-      "apy": 0.01265,
-      "apy_base": 0.01265,
+      "tvl_usd": 150893,
+      "apy": 0.01435,
+      "apy_base": 0.01435,
       "apy_reward": null,
       "pool_meta": "0.01%"
     },
@@ -614,7 +614,7 @@
       "protocol": "morpho-blue",
       "chain": "Hyperliquid L1",
       "pool": "THBILL",
-      "tvl_usd": 20683,
+      "tvl_usd": 20681,
       "apy": 0,
       "apy_base": 0,
       "apy_reward": null,
@@ -624,7 +624,7 @@
       "protocol": "euler-v2",
       "chain": "Arbitrum",
       "pool": "THBILL",
-      "tvl_usd": 19287,
+      "tvl_usd": 19284,
       "apy": 0.0241,
       "apy_base": 0.0241,
       "apy_reward": null,
@@ -634,7 +634,7 @@
       "protocol": "hypurrfi-pooled",
       "chain": "Hyperliquid L1",
       "pool": "THBILL",
-      "tvl_usd": 12649,
+      "tvl_usd": 12648,
       "apy": 0.24515,
       "apy_base": 0.24515,
       "apy_reward": null,
